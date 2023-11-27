@@ -132,6 +132,30 @@ class SystemSetup:
         self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
         self.cv.Command("GO")  # Perform optimization
 
+      def global_optimize_system(self, efl):
+        # Optimize the system
+        self.cv.Command("AUT ; CAN")
+        self.cv.Command("AUT")
+        self.cv.Command("MXC 100")
+        self.cv.Command("IMP 0.0001")
+        self.cv.Command("EFL Z1 = " + str(efl))
+        self.cv.Command("MNA 0")
+        self.cv.Command("MAE 0")
+        self.cv.Command("GS 1")
+        self.cv.Command("TIM 2")
+        if efl == 15 or efl == -15:
+          self.cv.Command("MXT 7")
+          self.cv.Command("SD SO Z1 > 12.5")
+        elif efl == 50 or efl == -50 or efl == -100 or efl == -200:
+          self.cv.Command("MXT 14")
+          self.cv.Command("SD SO Z1 > 40")
+        elif efl == 100 or efl == 200:
+          self.cv.Command("MXT 60")
+          self.cv.Command("SD SO Z1 > 75")
+
+        self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
+        self.cv.Command("GO")  # Perform global synthesis
+
 
       def error_fct(self, efl):
         self.cv.Command("AUT ; CAN")
