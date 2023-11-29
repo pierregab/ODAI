@@ -18,7 +18,7 @@ ODAI (Optical Devices made with AI) is an innovative project that integrates adv
 ## Getting Started
 1. **Clone the Repository**:
    ```bash
-   git clone [repository-link]
+   git clone https://github.com/pierregab/ODAI
    ```
 2. **Installation**:
    Detailed instructions on setting up the environment and dependencies.
@@ -30,7 +30,7 @@ ODAI (Optical Devices made with AI) is an innovative project that integrates adv
 - A comprehensive documentation detailing the SystemSetup class is available.
 
 ## License
-This project is licensed under the [LICENSE_NAME] - see the [LICENSE.md](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
 
 ## Acknowledgements
 - ICUBE laboratory (Strasbourg, France)
