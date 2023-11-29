@@ -4,7 +4,6 @@ import time
 import re
 from tqdm import tqdm
 import datetime
-import SystemSetup
 
 # Global variable to store parameters
 global_parameters = None
@@ -28,10 +27,10 @@ materials_list = [487490.704058, 516800.641673, 589130.612668, 531719.487626, 57
 system_setup.surfaces = {}
 # Diaphragme collé à la première lentille
 system_setup.surfaces[1] = system_setup.Surface(system_setup, 1, 1e18, 0) 
-system_setup.surfaces[2] = system_setup.Surface(system_setup, 2, 23.875, 0.650, "NBK7_SCHOTT")
-system_setup.surfaces[3] = system_setup.Surface(system_setup, 3, -17.011, 0.050)
-system_setup.surfaces[4] = system_setup.Surface(system_setup, 4, -16.998, 0.650, "SF2_SCHOTT")
-system_setup.surfaces[5] = system_setup.Surface(system_setup, 5, -58.355, 39.289)
+system_setup.surfaces[2] = system_setup.Surface(system_setup, 2, 22.63216, 7.0, "NBK7_SCHOTT")
+system_setup.surfaces[3] = system_setup.Surface(system_setup, 3, -144.99525, 22.022504)
+system_setup.surfaces[4] = system_setup.Surface(system_setup, 4, 4.77927, 6.998062, "SF2_SCHOTT")
+system_setup.surfaces[5] = system_setup.Surface(system_setup, 5, 5.73415, 0.212388)
 # ... [Add other surfaces]
 
 # Make radius and thickness variable
@@ -122,28 +121,37 @@ def main():
     # Create and configure the optimization problem
     prob = CodeVOptimization()
 
+    # Define initial solution
+    initial_solution = [22.63216, 7.0, -144.99525, 22.022504, 4.77927, 6.998062, 5.73415, 0.212388, 1, 8]
+
+    # Initialize Population with the initial solution
+    pop = pg.population(prob, size=200)
+    pop.push_back(initial_solution)  # Add the initial solution to the population
+
     # Choose an Algorithm for PyGMO
     algo = pg.algorithm(pg.de(gen=1))  # Set generations to 1 for manual iteration
+    # à tester : gaco ihs sga nsga2 maco
 
-    # Initialize Population
-    pop = pg.population(prob, size=100)
 
     total_generations = 100  # Set the total number of generations you want to run
     with tqdm(total=total_generations, desc="Optimizing") as pbar:  # Initialize tqdm progress bar
-        for gen in range(total_generations):
-            start_time = datetime.datetime.now()  # Record the start time
-            pop = algo.evolve(pop)  # Evolve the population for one generation
-            end_time = datetime.datetime.now()  # Record the end time
+      for gen in range(total_generations):
+          start_time = datetime.datetime.now()  # Record the start time
+          pop = algo.evolve(pop)  # Evolve the population for one generation
+          end_time = datetime.datetime.now()  # Record the end time
 
-            # Calculate the estimated finish time
-            elapsed_time = end_time - start_time
-            estimated_total = elapsed_time * total_generations
-            estimated_finish = start_time + estimated_total
-            finish_time_str = estimated_finish.strftime("%Y-%m-%d %H:%M:%S")
+          # Get the current best merit function value from the champion
+          current_best_merit = pop.champion_f[0]
 
-            # Update the progress bar
-            pbar.set_postfix_str(f"Elapsed: {elapsed_time}, ETA: {finish_time_str}")
-            pbar.update(1)
+          # Calculate the estimated finish time
+          elapsed_time = end_time - start_time
+          estimated_total = elapsed_time * total_generations
+          estimated_finish = start_time + estimated_total
+          finish_time_str = estimated_finish.strftime("%Y-%m-%d %H:%M:%S")
+
+          # Update the progress bar with elapsed time, estimated finish, and current merit
+          pbar.set_postfix_str(f"Elapsed: {elapsed_time}, ETA: {finish_time_str}, Current Merit: {current_best_merit}")
+          pbar.update(1)
 
     # Extract the best solution
     best_solution = pop.champion_x
