@@ -21,10 +21,8 @@ ODAI (Optical Devices made with AI) is an innovative project that integrates adv
    git clone https://github.com/pierregab/ODAI
    ```
 2. **Installation**:
-   Detailed instructions on setting up the environment and dependencies.
+   All dependencies must be installed (including Pygmo for the Global optimisation using Pygmo)
 
-3. **Usage**:
-   Examples and tutorials on how to use the SystemSetup class and various optimisation methods.
 
 ## Documentation
 - A comprehensive documentation detailing the SystemSetup class is available.
