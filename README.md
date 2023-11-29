@@ -1,4 +1,4 @@
-## ODAI : Optical Devices made with AI
+# ODAI : Optical Devices made with AI
 <img
   src="logo_final.png"
   alt="Alt text"
@@ -7,7 +7,7 @@
 
 SystemSetup Class made to communicate with CodeV software. 
 
-# Study of a Doublet 
+## Study of a Doublet 
 Optimisation using local optimisation inside CodeV
 
 Optimisation using saddle point method (using local optimisation inside codeV)
