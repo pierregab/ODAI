@@ -8,12 +8,12 @@
 ODAI (Optical Devices made with AI) is an innovative project that integrates advanced AI techniques with optical device design.
 
 ## Features
-- **SystemSetup Class**: A robust interface for seamless communication with CodeV software.
+- **SystemSetup Class**: A robust interface for communication with CodeV software.
 - **Optimisation Techniques**:
   - **Local Optimisation**: Leveraging CodeV's local optimisation for precision in doublet study.
   - **Saddle Point Method**: Advanced optimisation using local optimisation capabilities within CodeV.
-  - **Global Synthesis in CodeV**: Exploring the frontiers of global optimisation through CodeV's synthesis tools.
-  - **Pygmo Integration**: Utilizing the Pygmo library for cutting-edge global optimisation solutions.
+  - **Global Synthesis in CodeV**: Global optimisation through CodeV's synthesis tools.
+  - **Pygmo Integration**: Utilizing the Pygmo library for global optimisation.
 
 ## Getting Started
 1. **Clone the Repository**:
