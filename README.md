@@ -1,4 +1,10 @@
 ## ODAI
+<img
+  src="logo_final.png"
+  alt="Alt text"
+  title="Optional title"
+  style="display: inline-block; margin: 0 auto; width: 15%;">
+  
 Optical Devices made with AI.
 
 SystemSetup Class made to communicate with CodeV software. 
