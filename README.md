@@ -5,7 +5,7 @@
   title="Optional title"
   style="display: inline-block; margin: 0 auto; width: 15%;">
 
-ODAI (Optical Devices made with AI) is an innovative project that integrates advanced AI techniques with optical device design. Our mission is to revolutionize the field of optics by harnessing the power of AI for more efficient and accurate designs.
+ODAI (Optical Devices made with AI) is an innovative project that integrates advanced AI techniques with optical device design.
 
 ## Features
 - **SystemSetup Class**: A robust interface for seamless communication with CodeV software.
