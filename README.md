@@ -27,17 +27,13 @@ ODAI (Optical Devices made with AI) is an innovative project that integrates adv
    Examples and tutorials on how to use the SystemSetup class and various optimisation methods.
 
 ## Documentation
-- Comprehensive documentation detailing the modules, classes, and methods.
-- Use cases and real-world application examples.
-
-## Contributing
-We welcome contributions! Please read our [Contributing Guide](LINK_TO_CONTRIBUTING_GUIDE) for details on our code of conduct and the process for submitting pull requests.
+- A comprehensive documentation detailing the SystemSetup class is available.
 
 ## License
 This project is licensed under the [LICENSE_NAME] - see the [LICENSE.md](LICENSE) file for details.
 
 ## Acknowledgements
-- Credits to individuals, institutions, or resources that have contributed to this project.
+- ICUBE laboratory (Strasbourg, France)
 
 
 
