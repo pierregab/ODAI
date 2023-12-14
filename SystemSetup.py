@@ -146,29 +146,46 @@ class SystemSetup:
                 # You can add more code here if you need to update other properties
 
 
+
+
+      ##############  Methods for optimization ###############
+
+
+
       def optimize_system(self, efl, constrained = True):
         # Optimize the system
-        self.cv.Command("AUT ; CAN")
         self.cv.Command("AUT")
+        self.cv.Command('DEL 0.15') # Ray grid interval
+        if not constrained:
+          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
+
+        if constrained:
+          self.cv.Command("MNA 0")
+          self.cv.Command("MAE 0")
+
         self.cv.Command("MXC 100")
-        self.cv.Command("IMP 0.0001")
-        self.cv.Command("EFL Z1 = " + str(efl))
-        self.cv.Command("MNA 0")
-        self.cv.Command("MAE 0")
+        self.cv.Command('MNC 25')
+        self.cv.Command("IMP 1E-15")
+        self.cv.Command('WFR n') # Opti with transverse aberration
+
+        self.cv.Command("DRA S0..I y")
+        self.cv.Command("CNV 0") # Step optimisation
+        self.cv.Command("EFL = " + str(efl)) # Condition on the EFL
+        
         if efl == 15 or efl == -15:
-          self.cv.Command("MXT 7")
           if constrained == True:
             self.cv.Command("SD SO Z1 > 12.5")
+            self.cv.Command("MXT 7")
         elif efl == 50 or efl == -50 or efl == -100 or efl == -200:
-          self.cv.Command("MXT 14")
           if constrained == True:
             self.cv.Command("SD SO Z1 > 40")
+            self.cv.Command("MXT 14")
         elif efl == 100 or efl == 200:
-          self.cv.Command("MXT 60")
           if constrained == True:
             self.cv.Command("SD SO Z1 > 75")
-
-        self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
+            self.cv.Command("MXT 60")
+            
+        #self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
         self.cv.Command("GO")  # Perform optimization
 
       def global_optimize_system(self, efl):
@@ -196,26 +213,40 @@ class SystemSetup:
         self.cv.Command("GO")  # Perform global synthesis
 
 
-      def error_fct(self, efl):
+      def error_fct(self, efl, constrained = True):
         self.cv.Command("AUT ; CAN")
         self.cv.Command("AUT")
-        self.cv.Command("MXC 0")
-        self.cv.Command("MNC 0")
-        self.cv.Command("EFL Z1 = " + str(efl))
-        self.cv.Command("MNA 0")
-        self.cv.Command("MAE 0")
+        self.cv.Command('DEL 0.15') # Ray grid interval
+        if not constrained:
+          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
+
+        if constrained:
+          self.cv.Command("MNA 0")
+          self.cv.Command("MAE 0")
+
+        self.cv.Command('MNC 25')
+        self.cv.Command("MXC 100")
+        self.cv.Command("IMP 1E-15")
+        self.cv.Command('WFR n') # Opti with transverse aberration
+        self.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
+
+        self.cv.Command("CNV 0") # Step optimisation
+
         if efl == 15 or efl == -15:
           self.cv.Command("MXT 7")
-          self.cv.Command("SD SO Z1 > 12.5")
+          if constrained == True:
+            self.cv.Command("SD SO Z1 > 12.5")
         elif efl == 50 or efl == -50 or efl == -100 or efl == -200:
           self.cv.Command("MXT 14")
-          self.cv.Command("SD SO Z1 > 40")
+          if constrained == True:
+            self.cv.Command("SD SO Z1 > 40")
         elif efl == 100 or efl == 200:
           self.cv.Command("MXT 60")
-          self.cv.Command("SD SO Z1 > 75")
+          if constrained == True:
+            self.cv.Command("SD SO Z1 > 75")
 
         self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
-        result = self.cv.Command("GO")
+        result = self.cv.Command("GO")  # Perform optimization
 
         # Regular expression to find the error function value in scientific notation
         match = re.search(r'ERR\. F\.\s*=\s*([+-]?[0-9]*\.?[0-9]+(?:[Ee][+-]?[0-9]+)?)', result)
@@ -227,11 +258,9 @@ class SystemSetup:
 
 
 
-
       ############## Global Usage method ###############
 
 
-  
 
       def save_system(self, file_path):
         # Save the lens system
@@ -503,7 +532,9 @@ class SystemSetup:
               self.get_surface(num).set_radius(new_radius)
 
           # Optimize the first system
-          self.make_all_thicknesses_variable()
+          #self.make_all_thicknesses_variable()
+          self.optimize_system(efl, constrained=False)
+          self.optimize_system(efl, constrained=False)
           self.optimize_system(efl, constrained=False)
           self.update_all_surfaces_from_codev(output=output)
           system1_params = self.save_system_parameters()  # Save parameters of the first system
@@ -518,7 +549,9 @@ class SystemSetup:
               self.get_surface(num).set_radius(new_radius)
 
           # Optimize the second system
-          self.make_all_thicknesses_variable()
+          #self.make_all_thicknesses_variable()
+          self.optimize_system(efl, constrained=False)
+          self.optimize_system(efl, constrained=False)
           self.optimize_system(efl, constrained=False)
           self.update_all_surfaces_from_codev(output=output)
           system2_params = self.save_system_parameters()  # Save parameters of the second system
@@ -526,7 +559,7 @@ class SystemSetup:
           return system1_params, system2_params
 
 
-      def increase_thickness_and_optimize(self, lens_thickness_steps, air_distance_steps, lens_surface_number, air_surface_number, efl):
+      def increase_thickness_and_optimize(self, lens_thickness_steps, air_distance_steps, lens_surface_number, air_surface_number, efl, output=False):
         """
         Gradually increase the thickness of the lens and the air distance between lenses, followed by optimization.
         :param lens_thickness_steps: List of thickness values to increment for the lens.
@@ -534,9 +567,17 @@ class SystemSetup:
         :param lens_surface_number: The surface number of the lens whose thickness is to be increased.
         :param air_surface_number: The surface number of the air gap whose distance is to be increased.
         """
+        # Loop for lens thickness adjustments
         for lens_thickness in lens_thickness_steps:
             self.get_surface(lens_surface_number).set_thickness(lens_thickness)
-            for air_distance in air_distance_steps:
-                self.get_surface(air_surface_number).set_thickness(air_distance)
-                self.optimize_system(efl)
-                self.update_all_surfaces_from_codev()
+            self.optimize_system(efl, constrained=False)
+            self.update_all_surfaces_from_codev(output=output)
+    
+        # Check for edge thickness requirement violation
+        # If necessary, adjust air thickness between the lenses
+        for air_thickness in air_distance_steps:
+            self.get_surface(air_surface_number).set_thickness(air_thickness)
+            self.optimize_system(efl, constrained=False)
+            self.update_all_surfaces_from_codev(output=output)
+
+
