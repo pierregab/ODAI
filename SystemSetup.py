@@ -8,6 +8,8 @@ class SystemSetup:
       def __init__(self):
           self.cv = win32com.client.Dispatch("CodeV.Application")
           self.surfaces = {}   # dict to keep track of surfaces
+          self.ref_mode = 'radius'  # Default mode is 'radius'
+          self.saved_systems = {}  # dict to keep track of saved systems
 
       class Surface:
           def __init__(self, parent, number, radius, thickness, material=None):
@@ -15,6 +17,7 @@ class SystemSetup:
               self.cv = parent.cv
               self.number = number
               self.radius = radius
+              self.curvature = 1 / radius if radius != 0 else 0
               self.thickness = thickness
               self.material = material
               self.radius_variable = False
@@ -34,9 +37,30 @@ class SystemSetup:
 
           def set_radius(self, radius):
             self.radius = radius
-            self.cv.Command(f"RDY S{self.number} {self.radius}")
-            if self.radius_variable:
-                self.cv.Command(f"CCY S{self.number} 0")
+            if self.parent.ref_mode == 'radius':
+                self.cv.Command(f"RDY S{self.number} {self.radius}")
+                if self.radius_variable:
+                  self.cv.Command(f"CCY S{self.number} 0")
+            else:
+                curvature = 1 / radius if radius != 0 else 0
+                self.cv.Command(f"CUY S{self.number} {curvature}")
+                print(f"Warning: Radius set to {radius}, but system is in curvature mode. Radius converted to curvature: {curvature}.")
+                if self.radius_variable:
+                  self.cv.Command(f"CCY S{self.number} 0")
+
+          def set_curvature(self, curvature):
+              self.curvature = curvature
+              if self.parent.ref_mode == 'curvature':
+                  self.cv.Command(f"CUY S{self.number} {self.curvature}")
+                  if self.radius_variable:
+                    self.cv.Command(f"CCY S{self.number} 0")
+              else:
+                  radius = 1 / curvature if curvature != 0 else float('inf')
+                  self.cv.Command(f"RDY S{self.number} {radius}")
+                  print(f"Warning: Curvature set to {curvature}, but system is in radius mode. Curvature converted to radius: {radius}.")
+                  if self.radius_variable:
+                    self.cv.Command(f"CCY S{self.number} 0")
+
 
           def set_thickness(self, thickness):
             self.thickness = thickness
@@ -113,6 +137,17 @@ class SystemSetup:
         for index, (angle, weight) in enumerate(fields, start=1):
             self.cv.Command(f"INS F{index} {angle} {weight}")
 
+      def set_paraxial_image_distance(self):
+         self.cv.Command("PIM Yes")
+
+      def switch_ref_mode(self, mode):
+        """Switch between radius and curvature mode."""
+        if mode not in ['radius', 'curvature']:
+            raise ValueError("Mode must be 'radius' or 'curvature'.")
+
+        self.ref_mode = mode
+        self.cv.Command(f"RDM {'Y' if mode == 'radius' else 'N'}")
+
       def update_all_surfaces_from_codev(self, output = False):
         # Get the current parameters for all surfaces from CODE V
         result = self.cv.Command("LIS")
@@ -146,6 +181,51 @@ class SystemSetup:
                 # You can add more code here if you need to update other properties
 
 
+      def update_all_surfaces_from_codev(self, output=False):
+        # Get the current parameters for all surfaces from CODE V
+        result = self.cv.Command("LIS")
+
+        # Determine whether the system is in radius or curvature mode
+        is_curvature_mode = "CUY" in result.split('\n')[0]
+
+        if output:
+            # Print the actual mode 
+            print("System is in curvature mode." if is_curvature_mode else "System is in radius mode.")
+
+            # Split the result into lines
+            lines = result.split('\n')
+
+            # Print only the first line or until "SPECIFICATION DATA" is encountered
+            for line in lines:
+                if "SPECIFICATION DATA" in line:
+                    break
+                print(line)
+
+        # Regular expression patterns for radius and curvature modes
+        pattern_radius = r"\s+(\d+):\s+([-\d\.]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
+        pattern_curvature = r"\s+(\d+):\s+([-\d\.Ee\+\-]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
+
+        pattern = pattern_curvature if is_curvature_mode else pattern_radius
+        matches = re.finditer(pattern, result, re.MULTILINE)
+
+        for match in matches:
+            surface_number = int(match.group(1))
+            value = float(match.group(2))
+            thickness = float(match.group(3))
+            material = match.group(4) if match.group(4) is not None else None
+
+            if surface_number in self.surfaces:
+                surface = self.surfaces[surface_number]
+                if is_curvature_mode:
+                    surface.set_curvature(value)
+                else:
+                    surface.set_radius(value)
+                surface.set_thickness(thickness)
+                if material and material not in ['0', 'None']:
+                    surface.set_material(material)
+
+
+
 
 
       ##############  Methods for optimization ###############
@@ -171,7 +251,7 @@ class SystemSetup:
         self.cv.Command("DRA S0..I y")
         self.cv.Command("CNV 0") # Step optimisation
         self.cv.Command("EFL = " + str(efl)) # Condition on the EFL
-        
+
         if efl == 15 or efl == -15:
           if constrained == True:
             self.cv.Command("SD SO Z1 > 12.5")
@@ -184,7 +264,7 @@ class SystemSetup:
           if constrained == True:
             self.cv.Command("SD SO Z1 > 75")
             self.cv.Command("MXT 60")
-            
+
         #self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
         self.cv.Command("GO")  # Perform optimization
 
@@ -224,8 +304,8 @@ class SystemSetup:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
 
-        self.cv.Command('MNC 25')
-        self.cv.Command("MXC 100")
+        self.cv.Command('MNC 0')
+        self.cv.Command("MXC 0")
         self.cv.Command("IMP 1E-15")
         self.cv.Command('WFR n') # Opti with transverse aberration
         self.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
@@ -262,9 +342,12 @@ class SystemSetup:
 
 
 
-      def save_system(self, file_path):
+      def save_system(self, file_path, seq = True):
         # Save the lens system
-        self.cv.Command(f"SAV {file_path}")
+        if seq :
+           self.cv.Command(f"WRL {file_path}")
+        else :
+           self.cv.Command(f"SAV {file_path}")
         print(f"Lens system saved at: {file_path}")
 
       def stop_session(self):
@@ -295,52 +378,99 @@ class SystemSetup:
 
       def save_system_parameters(self):
         """
-        Save the current parameters of the system including the variability status of radius and thickness.
-        :return: A dictionary containing the parameters of all surfaces.
+        Save the current parameters of the system including the variability status of radius and thickness, and the current mode.
+        :return: A dictionary containing the parameters of all surfaces and the current mode.
         """
-        saved_params = {}
+        saved_params = {
+            'mode': self.ref_mode,
+            'surfaces': {}
+        }
         for surface_num, surface in self.surfaces.items():
-            saved_params[surface_num] = {
+            saved_params['surfaces'][surface_num] = {
                 'radius': surface.radius,
+                'curvature': surface.curvature,
                 'thickness': surface.thickness,
                 'material': surface.material,
                 'radius_variable': surface.radius_variable,
                 'thickness_variable': surface.thickness_variable
             }
         return saved_params
-    
-    
+
+
+
       def load_system_parameters(self, saved_params):
         """
-        Load a set of saved parameters into the system including the variability status of radius and thickness.
+        Load a set of saved parameters into the system including the variability status of radius and thickness, and the current mode.
         :param saved_params: A dictionary containing the parameters to be loaded.
         """
-        for surface_num, params in saved_params.items():
+        # Load the mode
+        if 'mode' in saved_params:
+            self.switch_ref_mode(saved_params['mode'])
+
+        # Load parameters for each surface
+        for surface_num, params in saved_params['surfaces'].items():
             if surface_num in self.surfaces:
                 surface = self.get_surface(surface_num)
-                surface.set_radius(params['radius'])
+                if saved_params['mode'] == 'radius':
+                    surface.set_radius(params['radius'])
+                elif saved_params['mode'] == 'curvature':
+                    surface.set_curvature(params['curvature'])
                 surface.set_thickness(params['thickness'])
-    
+
                 if params['material'] is not None:
                     surface.set_material(params['material'])
-    
+
                 if params['radius_variable']:
                     surface.make_radius_variable()
                 else:
                     surface.make_radius_fixed()
-    
+
                 if params['thickness_variable']:
                     surface.make_thickness_variable()
                 else:
                     surface.make_thickness_fixed()
 
 
-  
+      def print_saved_systems(self):
+        """
+        Prints all the saved systems and their corresponding parameters in a formatted manner.
+        """
+        if not self.saved_systems:
+            print("No systems have been saved.")
+            return
+
+        for system_name, system_data in self.saved_systems.items():
+            print(f"System Name: {system_name}")
+            print(f"System is in {system_data['mode']} mode.")
+            print("    RDY             THI     RMD       GLA           CCY   THC")
+
+            # Printing each surface's parameters
+            for surface_num, params in system_data['surfaces'].items():
+                radius = f"{params.get('radius', 'INFINITY'):>15}"
+                thickness = f"{params.get('thickness', 'INFINITY'):>10}"
+                material = params.get('material', 'None')
+                material_str = f"{material:12}" if material else "            "  # 12 spaces if None
+                radius_variable = "0" if params.get('radius_variable', False) else "100"
+                thickness_variable = "0" if params.get('thickness_variable', False) else "100"
+
+                if surface_num == 0:
+                    label = "OBJ:"
+                elif surface_num == len(system_data['surfaces']):
+                    label = "IMG:"
+                else:
+                    label = f"{surface_num:4}:"
+
+                print(f"{label}{radius}{thickness:12}{material_str}{radius_variable:>8}{thickness_variable:>8}")
+
+            print("-" * 30)  # Separator for better readability
+
+
+
 
       ############## Methods for the saddle point ###############
 
 
-  
+
       def initialize_buffer(self, num_points):
         """ Initialize a buffer for storing merit function values """
         buffer = np.zeros((num_points, num_points))
@@ -473,7 +603,7 @@ class SystemSetup:
 
         ref_surface.set_thickness(0)  # Set thickness of the reference surface to zero@
 
-        print(f"Added null surfaces {reference_surface_number + 2} and {reference_surface_number + 3}")
+        print(f"Added null surfaces {reference_surface_number + 1} and {reference_surface_number + 2}")
 
 
 
@@ -535,7 +665,6 @@ class SystemSetup:
           #self.make_all_thicknesses_variable()
           self.optimize_system(efl, constrained=False)
           self.optimize_system(efl, constrained=False)
-          self.optimize_system(efl, constrained=False)
           self.update_all_surfaces_from_codev(output=output)
           system1_params = self.save_system_parameters()  # Save parameters of the first system
 
@@ -552,32 +681,134 @@ class SystemSetup:
           #self.make_all_thicknesses_variable()
           self.optimize_system(efl, constrained=False)
           self.optimize_system(efl, constrained=False)
-          self.optimize_system(efl, constrained=False)
           self.update_all_surfaces_from_codev(output=output)
           system2_params = self.save_system_parameters()  # Save parameters of the second system
 
           return system1_params, system2_params
 
 
-      def increase_thickness_and_optimize(self, lens_thickness_steps, air_distance_steps, lens_surface_number, air_surface_number, efl, output=False):
-        """
-        Gradually increase the thickness of the lens and the air distance between lenses, followed by optimization.
-        :param lens_thickness_steps: List of thickness values to increment for the lens.
-        :param air_distance_steps: List of air distance values to increment between lenses.
-        :param lens_surface_number: The surface number of the lens whose thickness is to be increased.
-        :param air_surface_number: The surface number of the air gap whose distance is to be increased.
-        """
-        # Loop for lens thickness adjustments
-        for lens_thickness in lens_thickness_steps:
-            self.get_surface(lens_surface_number).set_thickness(lens_thickness)
-            self.optimize_system(efl, constrained=False)
-            self.update_all_surfaces_from_codev(output=output)
-    
-        # Check for edge thickness requirement violation
-        # If necessary, adjust air thickness between the lenses
-        for air_thickness in air_distance_steps:
-            self.get_surface(air_surface_number).set_thickness(air_thickness)
-            self.optimize_system(efl, constrained=False)
-            self.update_all_surfaces_from_codev(output=output)
+      def increase_thickness_and_optimize(self, lens_thickness_steps, air_distance_steps, lens_surface_number, air_surface_number, efl, file_path):
+          """
+          Gradually increase the thickness of the lens and the air distance between lenses, followed by optimization.
+
+          :param lens_thickness_steps: List of thickness values to increment for the lens.
+          :param air_distance_steps: List of air distance values to increment between lenses.
+          :param lens_surface_number: The surface number of the lens whose thickness is to be increased.
+          :param air_surface_number: The surface number of the air gap whose distance is to be increased.
+          :param efl: Effective focal length for optimization.
+          :param file_path: Path to save the final optimized system.
+          """
+
+          # Loop for lens thickness adjustments
+          for lens_thickness in lens_thickness_steps:
+              self.cv.Command(f"THI S{lens_surface_number} {lens_thickness}")
+              self.optimize_system(efl, constrained=False)
+              self.optimize_system(efl, constrained=False)
+              self.update_all_surfaces_from_codev()
+
+          # Loop for air distance adjustments
+          for air_thickness in air_distance_steps:
+              self.cv.Command(f"THI S{air_surface_number} {air_thickness}")
+              self.optimize_system(efl, constrained=False)
+              self.optimize_system(efl, constrained=False)
+              self.update_all_surfaces_from_codev()
+
+          # Save the final system
+          self.save_system(file_path)
 
 
+
+
+      ############## Saddle point Scan method ###############
+
+
+
+      def perform_sp_scan(self, reference_surface_number, efl, delta_curvature=0.00025, num_points=400, threshold_multiplier=3, output=False):
+        # Nested function to evaluate the derivative at a given curvature
+        def derivative_at_curvature(curvature, curvatures, derivatives):
+            index = np.searchsorted(curvatures, curvature) - 1
+            return derivatives[index]
+
+        # Nested function for the bisection method
+        def bisection_method(f, a, b, tol=1e-5, max_iter=100):
+            for _ in range(max_iter):
+                mid = (a + b) / 2
+                if f(mid) * f(a) < 0:
+                    b = mid
+                else:
+                    a = mid
+                if abs(b - a) < tol:
+                    break
+            return (a + b) / 2
+
+        # Nested function to check if the zero at the given index is smooth
+        def is_smooth_zero(derivatives, index, window_size=5):
+            start = max(index - window_size, 0)
+            end = min(index + window_size, len(derivatives))
+            window = derivatives[start:end]
+            return np.std(window) < threshold  # using the same threshold as before
+
+
+        # Define initial curvature based on the reference surface
+        initial_curvature = 1 / self.get_surface(reference_surface_number).radius
+
+        # Arrays to store curvatures and corresponding MF values
+        curvatures = np.linspace(initial_curvature - delta_curvature * num_points / 2, 
+                                 initial_curvature + delta_curvature * num_points / 2, 
+                                 num_points)
+        mf_values = np.zeros(num_points)
+
+        # Compute the derivative for each curvature using the central finite difference method
+        for i, curvature in enumerate(curvatures):
+            self.get_surface(reference_surface_number + 1).set_curvature(curvature)
+            mf = self.error_fct(efl, constrained=False)
+            mf_values[i] = mf
+
+        # Compute the derivative using the central finite difference method
+        derivatives = np.zeros(num_points)
+        for i in range(1, num_points - 1):
+            derivatives[i] = (mf_values[i + 1] - mf_values[i - 1]) / (2 * delta_curvature)
+
+        # Compute the standard deviation of the derivative values
+        std_deviation = np.std(derivatives)
+
+        # Set the threshold as a multiple of the standard deviation
+        threshold = threshold_multiplier * std_deviation
+
+        # Filter the data to focus on the region near zero
+        mask = np.abs(derivatives) < threshold
+        filtered_curvatures = curvatures[mask]
+        filtered_derivatives = derivatives[mask]
+
+        # Finding all intervals where the derivative changes sign and is smooth
+        zero_points = []
+        for i in range(1, len(curvatures) - 1):
+            if derivatives[i] * derivatives[i - 1] < 0:
+                a, b = curvatures[i - 1], curvatures[i]
+                zero_point = bisection_method(lambda x: derivative_at_curvature(x, curvatures, derivatives), a, b)
+
+                # Check if the zero point is smooth
+                if is_smooth_zero(derivatives, i):
+                    zero_points.append(zero_point)
+
+        if output:
+            # Plot the filtered derivative against curvature with the zero points marked
+            plt.plot(filtered_curvatures, filtered_derivatives, label="Filtered Derivative")
+            for zp in zero_points:
+                plt.scatter([zp], [0], color='red')  # Marking the zero points
+            plt.xlabel("Curvature")
+            plt.ylabel("Derivative of Merit Function")
+            plt.title("Filtered Derivative of Merit Function vs Curvature with Zero Points")
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+
+            # Plotting the merit function against curvature
+            plt.plot(curvatures, mf_values)
+            plt.xlabel("Curvature")
+            plt.ylabel("Merit Function")
+            plt.title("Merit Function vs Curvature")
+            plt.grid(True)
+            plt.show()
+
+        return zero_points
