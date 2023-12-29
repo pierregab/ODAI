@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import win32com.client
+from SystemNode_module import SystemNode, SystemTree
+from affichage import *
 
 class SystemSetup:
       def __init__(self):
@@ -148,38 +150,6 @@ class SystemSetup:
         self.ref_mode = mode
         self.cv.Command(f"RDM {'Y' if mode == 'radius' else 'N'}")
 
-      def update_all_surfaces_from_codev(self, output = False):
-        # Get the current parameters for all surfaces from CODE V
-        result = self.cv.Command("LIS")
-
-        if output:
-            # Split the result into lines
-            lines = result.split('\n')
-
-            # Print only the first line or until "SPECIFICATION DATA" is encountered
-            for line in lines:
-                if "SPECIFICATION DATA" in line:
-                    break
-                print(line)
-
-        # Regular expression to match each surface's parameters
-        pattern = r"\s+(\d+):\s+([-\d\.]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
-        matches = re.finditer(pattern, result, re.MULTILINE)
-
-        for match in matches:
-            surface_number = int(match.group(1))
-            radius = float(match.group(2))
-            thickness = float(match.group(3))
-            material = match.group(4) if match.group(4) is not None else None
-
-            if surface_number in self.surfaces:
-                surface = self.surfaces[surface_number]
-                surface.radius = radius
-                surface.thickness = thickness
-                if material != 0 or material != 'None':
-                  surface.material = material
-                # You can add more code here if you need to update other properties
-
 
       def update_all_surfaces_from_codev(self, output=False):
         # Get the current parameters for all surfaces from CODE V
@@ -225,6 +195,23 @@ class SystemSetup:
                     surface.set_material(material)
 
 
+      def get_efl_from_codev(self):
+        # Execute the LIS command and get the output
+        result = self.cv.Command("LIS")
+
+        # Regular expression to find the EFL in the output
+        efl_pattern = r"\s+EFL\s+([-\d\.Ee\+\-]+)"
+
+        # Search for the EFL in the output
+        match = re.search(efl_pattern, result)
+
+        if match:
+            # Extract and return the EFL value
+            efl = float(match.group(1))
+            return efl
+        else:
+            # Return None or raise an error if EFL is not found
+            return None
 
 
 
@@ -587,7 +574,7 @@ class SystemSetup:
         for num in range(last_surface_number, reference_surface_number, -1):
             self.surfaces[num + 2] = self.surfaces[num]
             self.surfaces[num + 2].number += 2
-            print(num)
+            #print(num)
 
         # Insert two new null surfaces after the reference surface
         for i in range(1, 3):
@@ -716,7 +703,64 @@ class SystemSetup:
           # Save the final system
           self.save_system(file_path)
 
+      def plot_optical_system(self, file_path, xlim=(0, 10), ylim=(-15, 15), hide_axes=True):
+          """
+          Plot the final optical system layout using rayoptics.
 
+          :param file_path: Path to the .seq file for the optical system.
+          :param xlim: Tuple for x-axis limits of the plot.
+          :param ylim: Tuple for y-axis limits of the plot.
+          :param hide_axes: Boolean to determine whether to hide the axes.
+          """
+          # Import necessary modules for rayoptics
+          from rayoptics.environment import open_model, InteractiveLayout
+          import matplotlib.pyplot as plt
+
+          # Load the optical model
+          opm = open_model(file_path)
+
+          # Create an InteractiveLayout instance
+          layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm, 
+                                  do_draw_rays=False, do_draw_beams=False, 
+                                  do_draw_edge_rays=False, do_draw_ray_fans=False, 
+                                  do_paraxial_layout=False)
+
+          # Get the axis for customization
+          ax = layout_plt.gca()
+          if hide_axes:
+              ax.grid(False)
+              ax.axis('off')
+          else:
+              ax.grid(True)
+
+          ax.set_ylim(0, 0.5)
+
+          # Adjust figure size and limits
+          layout_plt.plot()
+          plt.xlim(*xlim)
+          plt.ylim(*ylim)
+
+          # Show the plot
+          plt.show()
+
+      def sp_create_and_increase_thickness(self,sp,reference_surface_number,lens_thickness,file_path, efl):
+
+          self.switch_ref_mode('curvature')
+          self.get_surface(reference_surface_number+1).set_curvature(sp)
+          self.get_surface(reference_surface_number+2).set_curvature(sp)
+          merit_function = self.error_fct(efl, constrained=False)
+
+          # save system to restore it later
+          buffer = self.save_system_parameters()
+
+          self.cv.Command(f"THI S{reference_surface_number+1} {lens_thickness}")
+          self.save_system(file_path)
+
+          # restore system
+          self.load_system_parameters(buffer)
+          self.switch_ref_mode('radius')
+
+          return merit_function
 
 
       ############## Saddle point Scan method ###############
@@ -812,3 +856,131 @@ class SystemSetup:
             plt.show()
 
         return zero_points
+
+  
+
+    ############## Global interaction for Tree Creation ##############
+
+  
+
+      def find_and_optimize_from_saddle_points(self, current_node, system_tree, efl, base_file_path, depth, reference_surface):
+        print_subheader(f"Optimizing from Saddle Points - Depth {depth}, Ref. Surface {reference_surface}")
+        # Load the current optical system state from the parent node
+        # self.load_system_parameters(current_node.optical_system_state)
+        # self.update_all_surfaces_from_codev(output=False)
+
+        # Perform Saddle Point Scan
+        self.switch_ref_mode('curvature')
+        sps = self.perform_sp_scan(reference_surface, efl, output=False)
+        print(f"  Saddle Points Found: {len(sps)}")
+      
+        for i, sp in enumerate(sps):
+            print(f"  Processing Saddle Point {i+1}: Value {sp}")
+            # Save the current optical system state before modifications
+            original_state = self.save_system_parameters()
+
+            # Saddle Point File Naming
+            sp_filename = f"{base_file_path}/L{depth+1}_SP{i+1}.seq"
+            sp_merit = self.sp_create_and_increase_thickness(sp, reference_surface, current_node.system_params['lens_thickness'], sp_filename, efl)
+            self.update_all_surfaces_from_codev(output=False)
+
+            # Save the state after creating and increasing thickness
+            sp_state = self.save_system_parameters()
+
+            # Create a node for the saddle point and add it to the tree
+            sp_node = SystemNode(system_params=current_node.system_params, optical_system_state=sp_state, seq_file_path=sp_filename,
+                                  parent=current_node, merit_function=sp_merit, is_optimized=False, depth=depth+1)
+            current_node.add_child(sp_node)
+            system_tree.add_node(sp_node)
+
+            # Surface numbers (list like 3,4 for ref 2)
+            surface_numbers = [reference_surface + 1, reference_surface + 2]
+
+            # Modify curvatures for two systems around the saddle point
+            system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, output=False)
+
+            # Optimize and Save System 1
+            self.load_system_parameters(system1_params)
+            system1_filename = f"{base_file_path}/L{depth+1}_SP{i+1}_OptA.seq"
+            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], 3, 2, efl, system1_filename)
+            system1_state = self.save_system_parameters()
+            system1_merit_function = self.error_fct(efl, constrained=False)
+            system1_efl = self.get_efl_from_codev()
+            system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
+                                      parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
+            sp_node.add_child(system1_node)
+            system_tree.add_node(system1_node)
+
+            # Restore original state and Optimize and Save System 2
+            self.load_system_parameters(system2_params)
+            system2_filename = f"{base_file_path}/L{depth+1}_SP{i+1}_OptB.seq"
+            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], 3, 2, efl, system2_filename)
+            system2_state = self.save_system_parameters()
+            system2_merit_function = self.error_fct(efl, constrained=False)
+            system2_efl = self.get_efl_from_codev()
+            system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
+                                       parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
+            sp_node.add_child(system2_node)
+            system_tree.add_node(system2_node)
+
+            # Restore the original optical system state after each saddle point iteration
+            self.load_system_parameters(original_state)
+          
+        print("  Completed Saddle Point Optimization")
+
+        
+      
+      def evolve_optimized_systems(self, system_tree, starting_depth, target_depth, base_file_path, efl):
+        print_evolution_header(starting_depth, target_depth)
+
+        current_depth = starting_depth
+
+        while current_depth <= target_depth:
+            print_subheader(f"Processing Depth {current_depth}")
+            optimized_nodes = system_tree.find_optimized_nodes_at_depth(current_depth)
+            print(f"Found {len(optimized_nodes)} optimized nodes at depth {current_depth}")
+
+            for i, node in enumerate(optimized_nodes):
+                print(f"  Optimizing Node number {i+1} of {len(optimized_nodes)} (Seq File: {node.seq_file_path}) at Depth {current_depth}")
+                self.load_system_parameters(node.optical_system_state)
+                self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
+                system_tree.print_tree()
+
+                # Perform SP detection and optimization for each optimized node
+                viable_surfaces = self.identify_viable_surfaces()
+                print(f"Viable surfaces for node: {viable_surfaces}")
+                if viable_surfaces is not None:
+                    for surface in viable_surfaces:
+                        print("\n")
+                        print(f"    Optimizing at Surface {surface}")
+                        buffer = self.save_system_parameters()
+                        self.add_null_surfaces(surface)
+                        self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
+                        self.load_system_parameters(buffer)
+                else:
+                    print("No viable surfaces found")
+
+            current_depth += 1
+            print(f"Completed Depth {current_depth - 1}")
+
+        print_header("System Evolution Process Completed")
+
+
+      def identify_viable_surfaces(self):
+          """
+          Identify the surfaces that are viable for adding null surfaces.
+          :return: A list of surface numbers that are viable for adding null surfaces.
+          """
+          viable_surfaces = []
+          last_surface_number = self.get_last_surface_number()
+          print(f"Last surface number: {last_surface_number}")
+
+          if last_surface_number is not None:
+              for surface_num in range(1, last_surface_number+1):
+                  if surface_num % 2 == 0:
+                      viable_surfaces.append(surface_num)
+          else:
+              print("Error: Unable to retrieve the last surface number")
+
+          return viable_surfaces
+      
