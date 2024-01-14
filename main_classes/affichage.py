@@ -40,5 +40,3 @@ def print_decorative_header():
 
 def print_blank_line():
     print("\n"*3)
-
-
