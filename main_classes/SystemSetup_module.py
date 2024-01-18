@@ -946,18 +946,6 @@ class SystemSetup:
                 self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
                 system_tree.print_tree()
 
-                # Search for discrepancies between the system parameters and the system in CODE V
-                # Parse and compare SEQ file only if it exists
-                if node.seq_file_path:
-                    seq_file_path = f"{node.seq_file_path}"
-                    seq_data = SystemNode.parse_seq_file(seq_file_path)  # Assuming this function is defined in SystemNode
-                    discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # Assuming this function is also defined in SystemNode
-                    if discrepancies:
-                        print(f"Discrepancies found for node {node.seq_file_path}")
-                        for discrepancy in discrepancies:
-                            print(discrepancy)
-                        # Optional: handle the discrepancies as needed
-
                 # Perform SP detection and optimization for each optimized node
                 viable_surfaces = self.identify_viable_surfaces()
                 print(f"Viable surfaces for node: {viable_surfaces}")
@@ -971,6 +959,18 @@ class SystemSetup:
                         self.load_system_parameters(buffer)
                 else:
                     print("No viable surfaces found")
+
+                # Search for discrepancies between the system parameters and the system in CODE V for all child nodes
+                for child in node.children:
+                  if child.seq_file_path:
+                      seq_file_path = f"{node.seq_file_path}"
+                      seq_data = SystemNode.parse_seq_file(seq_file_path)  # Assuming this function is defined in SystemNode
+                      discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # Assuming this function is also defined in SystemNode
+                      if discrepancies:
+                          print(f"Discrepancies found for node {node.seq_file_path}")
+                          for discrepancy in discrepancies:
+                              print(discrepancy)
+                          # Optional: handle the discrepancies as needed
 
             current_depth += 1
             print(f"Completed Depth {current_depth - 1}")
