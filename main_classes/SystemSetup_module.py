@@ -963,11 +963,14 @@ class SystemSetup:
                 # Search for discrepancies between the system parameters and the system in CODE V for all child nodes
                 for child in node.children:
                   if child.seq_file_path:
-                      seq_file_path = f"{child.seq_file_path}"
-                      seq_data = SystemNode.parse_seq_file(seq_file_path)  # Assuming this function is defined in SystemNode
-                      discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # Assuming this function is also defined in SystemNode
+                    for child2 in child.children: 
+                      seq_file_path = f"{child2.seq_file_path}"
+                      seq_data = SystemNode.parse_seq_file(seq_file_path)  
+                      print(seq_data)
+                      print(node.optical_system_state)
+                      discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data) 
                       if discrepancies:
-                          print(f"Discrepancies found for node {child.seq_file_path}")
+                          print(f"Discrepancies found for node {child2.seq_file_path}")
                           for discrepancy in discrepancies:
                               print(discrepancy)
                           # Optional: handle the discrepancies as needed
