@@ -953,7 +953,7 @@ class SystemSetup:
                     seq_data = SystemNode.parse_seq_file(seq_file_path)  # Assuming this function is defined in SystemNode
                     discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # Assuming this function is also defined in SystemNode
                     if discrepancies:
-                        print("Discrepancies found between node parameters and SEQ file:")
+                        print(f"Discrepancies found for node {node.seq_file_path}")
                         for discrepancy in discrepancies:
                             print(discrepancy)
                         # Optional: handle the discrepancies as needed
