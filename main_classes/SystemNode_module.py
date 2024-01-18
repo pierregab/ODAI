@@ -5,6 +5,7 @@ import io
 import os
 import numpy as np
 from affichage import print_decorative_header, print_blank_line
+import re
 
 class SystemNode:
   def __init__(self, system_params, optical_system_state=None,seq_file_path=None, parent=None, merit_function=None, efl = None, is_optimized=False, depth=0, high_debuging=False):
@@ -42,6 +43,52 @@ class SystemNode:
 
   def add_minimum(self, minimum):
       self.minima.append(minimum)
+
+  def parse_seq_file(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    seq_data = {}
+    surface_pattern = r"S\s+([-\d\.Ee\+\-]+)\s+([-\d\.Ee\+\-]+)\s+(\w+)"
+
+    for line in lines:
+        # Check for surface data
+        match = re.match(surface_pattern, line.strip())
+        if match:
+            radius, thickness, material = match.groups()
+            radius = float(radius)
+            curvature = 1 / radius if radius != 0 else 0
+            seq_data[f"S{len(seq_data)}"] = {
+                'radius': radius,
+                'curvature': curvature,
+                'thickness': float(thickness),
+                'material': material
+            }
+
+    return seq_data
+  
+  def compare_systems(node_state, seq_data):
+    discrepancies = []
+    for surface_num, surface in node_state['surfaces'].items():
+        seq_surface = seq_data.get(surface_num)
+        if not seq_surface:
+            discrepancies.append(f"Surface {surface_num} not found in SEQ data")
+            continue
+
+        # Compare radius or curvature based on the mode
+        if node_state['mode'] == 'radius':
+            if surface['radius'] != seq_surface['radius']:
+                discrepancies.append(f"Surface {surface_num} radius mismatch: Node {surface['radius']} vs SEQ {seq_surface['radius']}")
+        elif node_state['mode'] == 'curvature':
+            if surface['curvature'] != seq_surface['curvature']:
+                discrepancies.append(f"Surface {surface_num} curvature mismatch: Node {surface['curvature']} vs SEQ {seq_surface['curvature']}")
+
+        if surface['thickness'] != seq_surface['thickness']:
+            discrepancies.append(f"Surface {surface_num} thickness mismatch: Node {surface['thickness']} vs SEQ {seq_surface['thickness']}")
+        if surface['material'] != seq_surface['material']:
+            discrepancies.append(f"Surface {surface_num} material mismatch: Node {surface['material']} vs SEQ {seq_surface['material']}")
+
+    return discrepancies
 
 
 class SystemTree:
