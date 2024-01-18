@@ -949,7 +949,7 @@ class SystemSetup:
                 # Search for discrepancies between the system parameters and the system in CODE V
                 # Parse and compare SEQ file only if it exists
                 if node.seq_file_path:
-                    seq_file_path = f"{base_file_path}/{node.seq_file_path}"
+                    seq_file_path = f"{node.seq_file_path}"
                     seq_data = SystemNode.parse_seq_file(seq_file_path)  # Assuming this function is defined in SystemNode
                     discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # Assuming this function is also defined in SystemNode
                     if discrepancies:
