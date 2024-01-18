@@ -947,15 +947,16 @@ class SystemSetup:
                 system_tree.print_tree()
 
                 # Search for discrepancies between the system parameters and the system in CODE V
-                # Parse and compare SEQ file
-                seq_file_path = f"{base_file_path}/{node.seq_file_path}"
-                seq_data = SystemNode.parse_seq_file(seq_file_path, self.ref_mode)  # Make sure to define this function
-                discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # And this one
-                if discrepancies:
-                    print("Discrepancies found between node parameters and SEQ file:")
-                    for discrepancy in discrepancies:
-                        print(discrepancy)
-                    # Optional: handle the discrepancies as needed
+                # Parse and compare SEQ file only if it exists
+                if node.seq_file_path:
+                    seq_file_path = f"{base_file_path}/{node.seq_file_path}"
+                    seq_data = SystemNode.parse_seq_file(seq_file_path)  # Assuming this function is defined in SystemNode
+                    discrepancies = SystemNode.compare_systems(node.optical_system_state, seq_data)  # Assuming this function is also defined in SystemNode
+                    if discrepancies:
+                        print("Discrepancies found between node parameters and SEQ file:")
+                        for discrepancy in discrepancies:
+                            print(discrepancy)
+                        # Optional: handle the discrepancies as needed
 
                 # Perform SP detection and optimization for each optimized node
                 viable_surfaces = self.identify_viable_surfaces()
