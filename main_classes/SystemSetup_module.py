@@ -159,30 +159,31 @@ class SystemSetup:
         is_curvature_mode = "CUY" in result.split('\n')[0]
 
         if output:
-            # Print the actual mode 
             print("System is in curvature mode." if is_curvature_mode else "System is in radius mode.")
-
-            # Split the result into lines
             lines = result.split('\n')
-
-            # Print only the first line or until "SPECIFICATION DATA" is encountered
             for line in lines:
                 if "SPECIFICATION DATA" in line:
                     break
                 print(line)
 
-        # Regular expression patterns for radius and curvature modes
-        pattern_radius = r"\s+(\d+):\s+([-\d\.]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
-        pattern_curvature = r"\s+(\d+):\s+([-\d\.Ee\+\-]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
+        # Updated regular expression patterns for radius and curvature modes
+        pattern_radius = r"\s+(STO|\d+):\s+([-\d\.]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
+        pattern_curvature = r"\s+(STO|\d+):\s+([-\d\.Ee\+\-]+)\s+([-\d\.]+)(?:\s+([\w_]+))?"
 
         pattern = pattern_curvature if is_curvature_mode else pattern_radius
         matches = re.finditer(pattern, result, re.MULTILINE)
 
         for match in matches:
-            surface_number = int(match.group(1))
+            surface_number = match.group(1)
             value = float(match.group(2))
             thickness = float(match.group(3))
             material = match.group(4) if match.group(4) is not None else None
+
+            # Handle "STO" as surface number 1
+            if surface_number == "STO":
+                surface_number = 1
+            else:
+                surface_number = int(surface_number)
 
             if surface_number in self.surfaces:
                 surface = self.surfaces[surface_number]
