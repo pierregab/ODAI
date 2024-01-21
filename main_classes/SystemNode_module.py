@@ -181,9 +181,6 @@ class SystemTree:
 
         # Print the tree structure with system state details
         self._print_node_with_state(node, depth)
-        # Print the system state
-        if node.optical_system_state:
-            print(node.optical_system_state)
         print_blank_line()
 
     def _print_node_with_state(self, node, depth):
@@ -198,6 +195,7 @@ class SystemTree:
         # Print the optical system state
         if node.optical_system_state:
             self._print_optical_system_state(node.optical_system_state)
+            print(node.optical_system_state)
 
         for child in node.children:
             self._print_node_with_state(child, depth + 1)
