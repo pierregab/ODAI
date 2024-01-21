@@ -48,7 +48,7 @@ base_file_path = "C:/CVUSER"
 
 # Evolve the optical systems
 starting_depth = 0
-target_depth = 0  # Or any other depth you wish to reach
+target_depth = 1  # Or any other depth you wish to reach
 optical_system.evolve_optimized_systems(system_tree, starting_depth, target_depth, base_file_path, efl)
 
 # Print and plot the system tree

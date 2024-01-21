@@ -195,6 +195,21 @@ class SystemSetup:
                 if material and material not in ['0', 'None']:
                     surface.set_material(material)
 
+      def print_current_system(self):
+        # cycle through all surfaces and print their parameters
+        for surface in self.surfaces.values():
+            print(f"Surface {surface.number}: Radius: {surface.radius}, Thickness: {surface.thickness}, Material: {surface.material}")
+
+
+      def get_ordered_surfaces(self):
+        # Create a sorted list of tuples (surface_number, surface_object)
+        sorted_surfaces = sorted(self.surfaces.items(), key=lambda item: item[1].number)
+
+        # Create a dictionary from the sorted list
+        ordered_surfaces = dict(sorted_surfaces)
+
+        return ordered_surfaces
+
 
       def get_efl_from_codev(self):
         # Execute the LIS command and get the output
@@ -562,7 +577,7 @@ class SystemSetup:
         last_surface_number = self.get_last_surface_number()
 
         #print starting system state
-        print(self.surfaces)
+        print(self.print_current_system())
         print(self.cv.Command("LIS"))
 
         # Get properties of the reference surface
@@ -595,8 +610,11 @@ class SystemSetup:
 
         ref_surface.set_thickness(0)  # Set thickness of the reference surface to zero
 
+        # order the surfaces
+        self.surfaces = self.get_ordered_surfaces()
+
         #print ending system state
-        print(self.surfaces)
+        print(self.print_current_system())
         print(self.cv.Command("LIS"))
 
         print(f"Added null surfaces {reference_surface_number + 1} and {reference_surface_number + 2}")
