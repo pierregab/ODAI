@@ -561,6 +561,10 @@ class SystemSetup:
         """
         last_surface_number = self.get_last_surface_number()
 
+        #print starting system state
+        print(self.surfaces)
+        print(self.cv.Command("LIS"))
+
         # Get properties of the reference surface
         ref_surface = self.get_surface(reference_surface_number)
         material = self.get_surface(reference_surface_number-1).material
@@ -589,7 +593,11 @@ class SystemSetup:
                 self.surfaces[new_surface_number] = self.Surface(self, new_surface_number, radius, 0, material)
                 self.surfaces[new_surface_number].make_radius_variable()
 
-        ref_surface.set_thickness(0)  # Set thickness of the reference surface to zero@
+        ref_surface.set_thickness(0)  # Set thickness of the reference surface to zero
+
+        #print ending system state
+        print(self.surfaces)
+        print(self.cv.Command("LIS"))
 
         print(f"Added null surfaces {reference_surface_number + 1} and {reference_surface_number + 2}")
 
