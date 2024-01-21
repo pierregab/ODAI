@@ -69,9 +69,6 @@ class SystemTree:
         is_optimized = "Yes" if node.is_optimized else "No"
         node_info = f"{indent}Node Depth {depth} | Optimized: {is_optimized} | SEQ File: {seq_file} | Merit: {merit_function} | EFL: {efl}"
         print(node_info)
-        # Print the system state
-        if node.optical_system_state:
-            print(node.optical_system_state)
 
         for child in node.children:
             self.print_tree(child, depth + 1)
@@ -184,6 +181,9 @@ class SystemTree:
 
         # Print the tree structure with system state details
         self._print_node_with_state(node, depth)
+        # Print the system state
+        if node.optical_system_state:
+            print(node.optical_system_state)
         print_blank_line()
 
     def _print_node_with_state(self, node, depth):
