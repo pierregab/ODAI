@@ -5,6 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import win32com.client
 from SystemNode_module import SystemNode, SystemTree
 from affichage import *
+import copy
 
 class SystemSetup:
       def __init__(self):
@@ -982,7 +983,9 @@ class SystemSetup:
 
             for i, node in enumerate(optimized_nodes):
                 print(f"  Optimizing Node number {i+1} of {len(optimized_nodes)} (Seq File: {node.seq_file_path}) at Depth {current_depth}")
+                # Make node_state a const 
                 node_state = node.optical_system_state
+                node_state_copy = copy.deepcopy(node_state)
                 self.load_system_parameters(node_state)
                 self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
                 system_tree.print_tree()
@@ -994,7 +997,7 @@ class SystemSetup:
                     for surface in viable_surfaces:
                         print("\n")
                         print(f"    Optimizing at Surface {surface}")
-                        self.load_system_parameters(node_state)
+                        self.load_system_parameters(node_state_copy)
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
                 else:
