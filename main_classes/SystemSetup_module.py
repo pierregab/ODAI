@@ -380,6 +380,14 @@ class SystemSetup:
             self.get_surface(surface_num).make_thickness_variable()
         print("All thicknesses have been made variable.")
 
+      def clear_system(self):
+        """
+        Clear the current state of the system, removing all existing surfaces
+        and resetting system-specific attributes to their default state.
+        """
+        self.surfaces.clear()  # Remove all surfaces
+        self.ref_mode = None   # Reset the reference mode to None or a default value
+
       def save_system_parameters(self):
         """
         Save the current parameters of the system including the variability status of radius and thickness, and the current mode.
@@ -407,6 +415,9 @@ class SystemSetup:
         Load a set of saved parameters into the system including the variability status of radius and thickness, and the current mode.
         :param saved_params: A dictionary containing the parameters to be loaded.
         """
+
+        self.clear_system()  # Clear the system first
+
         # Load the mode
         if 'mode' in saved_params:
             self.switch_ref_mode(saved_params['mode'])
