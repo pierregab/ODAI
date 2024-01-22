@@ -578,7 +578,13 @@ class SystemSetup:
 
         #print starting system state
         print(self.print_current_system())
-        print(self.cv.Command("LIS"))
+        # Print the LIS until "SPECIFICATION DATA" is found
+        result = self.cv.Command("LIS")
+        lines = result.split('\n')
+        for line in lines:
+            if "SPECIFICATION DATA" in line:
+                break
+            print(line)
 
         # Get properties of the reference surface
         ref_surface = self.get_surface(reference_surface_number)
@@ -615,7 +621,14 @@ class SystemSetup:
 
         #print ending system state
         print(self.print_current_system())
-        print(self.cv.Command("LIS"))
+        
+        # Print the LIS until "SPECIFICATION DATA" is found
+        result = self.cv.Command("LIS")
+        lines = result.split('\n')
+        for line in lines:
+            if "SPECIFICATION DATA" in line:
+                break
+            print(line)
 
         print(f"Added null surfaces {reference_surface_number + 1} and {reference_surface_number + 2}")
 
