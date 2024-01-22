@@ -621,7 +621,7 @@ class SystemSetup:
 
         #print ending system state
         print(self.print_current_system())
-        
+
         # Print the LIS until "SPECIFICATION DATA" is found
         result = self.cv.Command("LIS")
         lines = result.split('\n')
@@ -993,10 +993,9 @@ class SystemSetup:
                     for surface in viable_surfaces:
                         print("\n")
                         print(f"    Optimizing at Surface {surface}")
-                        buffer = self.save_system_parameters()
+                        self.load_system_parameters(node.optical_system_state)
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
-                        self.load_system_parameters(buffer)
                 else:
                     print("No viable surfaces found")
 
