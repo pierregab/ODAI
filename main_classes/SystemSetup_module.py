@@ -982,9 +982,10 @@ class SystemSetup:
 
             for i, node in enumerate(optimized_nodes):
                 print(f"  Optimizing Node number {i+1} of {len(optimized_nodes)} (Seq File: {node.seq_file_path}) at Depth {current_depth}")
-                self.load_system_parameters(node.optical_system_state)
+                node_state = node.optical_system_state
+                self.load_system_parameters(node_state)
                 self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
-                system_tree.print_tree_with_system_states()
+                system_tree.print_tree()
 
                 # Perform SP detection and optimization for each optimized node
                 viable_surfaces = self.identify_viable_surfaces()
@@ -993,7 +994,7 @@ class SystemSetup:
                     for surface in viable_surfaces:
                         print("\n")
                         print(f"    Optimizing at Surface {surface}")
-                        self.load_system_parameters(node.optical_system_state)
+                        self.load_system_parameters(node_state)
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
                 else:
