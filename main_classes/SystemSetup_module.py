@@ -38,6 +38,11 @@ class SystemSetup:
             self.cv.Command(command)
             #print(f"Created surface {self.number}: {command}")
 
+          def delete_surface(self):
+            # Delete the surface
+            self.cv.Command(f"DEL S{self.number}")
+            #print(f"Deleted surface {self.number}")
+
           def set_radius(self, radius):
             self.radius = radius
             if self.parent.ref_mode == 'radius':
@@ -385,8 +390,12 @@ class SystemSetup:
         Clear the current state of the system, removing all existing surfaces
         and resetting system-specific attributes to their default state.
         """
-        self.surfaces.clear()  # Remove all surfaces
-        self.ref_mode = None   # Reset the reference mode to None or a default value
+        # Delete surfaces in CODE V before clearing them from Python
+        for surface in self.surfaces.values():
+            surface.delete_surface()
+
+        self.surfaces.clear()  # Now clear the Python dictionary
+        self.ref_mode = None   # Reset the reference mode
 
       def save_system_parameters(self):
         """
