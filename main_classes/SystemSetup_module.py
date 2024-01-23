@@ -416,7 +416,7 @@ class SystemSetup:
         :param saved_params: A dictionary containing the parameters to be loaded.
         """
 
-        self.clear_system()  # Clear the system first
+        #self.clear_system()  # Clear the system first
 
         # Load the mode
         if 'mode' in saved_params:
@@ -1020,6 +1020,8 @@ class SystemSetup:
                         # Print the state
                         print("DEBUG: Printing the state")
                         print(self.print_current_system())
+
+                        self.clear_system()
 
                         self.load_system_parameters(node_state)
 
