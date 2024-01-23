@@ -393,7 +393,7 @@ class SystemSetup:
         # Skip deleting the first surface (assuming its key is '1')
         first_surface_key = 1  # or whatever key represents your first surface
 
-        # Delete surfaces in CODE V before clearing them from Python
+        #Delete surfaces in CODE V before clearing them from Python
         for surface_num, surface in list(self.surfaces.items()):
             if surface_num != first_surface_key:
                 surface.delete_surface()
@@ -425,18 +425,26 @@ class SystemSetup:
 
 
       def load_system_parameters(self, saved_params):
-        # Clear the system first
-        self.clear_system()
-
         # Load the mode
         if 'mode' in saved_params:
             self.ref_mode = saved_params['mode']
 
-        # Load parameters for each surface
+        # Identify which surfaces need to be kept or updated
+        surfaces_to_keep = set(saved_params['surfaces'].keys())
+
+        # Delete surfaces that are not in the saved parameters
+        for surface_num in list(self.surfaces.keys()):
+            if surface_num not in surfaces_to_keep:
+                self.surfaces[surface_num].delete_surface()
+                del self.surfaces[surface_num]
+
+        # Load parameters for each surface in the saved parameters
         for surface_num, params in saved_params['surfaces'].items():
-            # Create or retrieve surface
+            # Create a new surface if it does not exist
             if surface_num not in self.surfaces:
                 self.surfaces[surface_num] = self.Surface(self, surface_num, params['radius'], params['thickness'], params.get('material'))
+
+            # Retrieve the surface
             surface = self.surfaces[surface_num]
 
             # Update surface properties
@@ -450,11 +458,19 @@ class SystemSetup:
                 if params.get('material') is not None:
                     surface.set_material(params['material'])
 
-                surface.make_radius_variable() if params['radius_variable'] else surface.make_radius_fixed()
-                surface.make_thickness_variable() if params['thickness_variable'] else surface.make_thickness_fixed()
+                if params['radius_variable']:
+                    surface.make_radius_variable()
+                else:
+                    surface.make_radius_fixed()
+
+                if params['thickness_variable']:
+                    surface.make_thickness_variable()
+                else:
+                    surface.make_thickness_fixed()
 
             except Exception as e:
                 print(f"Error updating surface {surface_num}: {e}")
+
 
 
 
