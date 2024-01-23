@@ -425,10 +425,6 @@ class SystemSetup:
 
 
       def load_system_parameters(self, saved_params):
-        """
-        Load a set of saved parameters into the system including the variability status of radius and thickness, and the current mode.
-        :param saved_params: A dictionary containing the parameters to be loaded.
-        """
         # Clear the system first
         self.clear_system()
 
@@ -438,31 +434,28 @@ class SystemSetup:
 
         # Load parameters for each surface
         for surface_num, params in saved_params['surfaces'].items():
-            # Check if the surface exists; if not, create it
+            # Create or retrieve surface
             if surface_num not in self.surfaces:
                 self.surfaces[surface_num] = self.Surface(self, surface_num, params['radius'], params['thickness'], params.get('material'))
-
             surface = self.surfaces[surface_num]
 
             # Update surface properties
-            if self.ref_mode == 'radius':
-                surface.set_radius(params['radius'])
-            elif self.ref_mode == 'curvature':
-                surface.set_curvature(params['curvature'])
-            surface.set_thickness(params['thickness'])
+            try:
+                if self.ref_mode == 'radius':
+                    surface.set_radius(params['radius'])
+                elif self.ref_mode == 'curvature':
+                    surface.set_curvature(params['curvature'])
+                surface.set_thickness(params['thickness'])
 
-            if params.get('material') is not None:
-                surface.set_material(params['material'])
+                if params.get('material') is not None:
+                    surface.set_material(params['material'])
 
-            if params['radius_variable']:
-                surface.make_radius_variable()
-            else:
-                surface.make_radius_fixed()
+                surface.make_radius_variable() if params['radius_variable'] else surface.make_radius_fixed()
+                surface.make_thickness_variable() if params['thickness_variable'] else surface.make_thickness_fixed()
 
-            if params['thickness_variable']:
-                surface.make_thickness_variable()
-            else:
-                surface.make_thickness_fixed()
+            except Exception as e:
+                print(f"Error updating surface {surface_num}: {e}")
+
 
 
       def print_saved_systems(self):
@@ -1025,7 +1018,7 @@ class SystemSetup:
                 print("DEBUG: Printing the state")
                 print(self.print_current_system())
 
-                self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
+                #self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
                 system_tree.print_tree()
 
                 # Perform SP detection and optimization for each optimized node
