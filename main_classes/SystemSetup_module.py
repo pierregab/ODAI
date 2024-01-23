@@ -451,6 +451,7 @@ class SystemSetup:
 
 
       def load_system_parameters(self, saved_params):
+        self.clear_system()  # Clear the current system
         # Load the mode
         if 'mode' in saved_params:
             self.ref_mode = saved_params['mode']
