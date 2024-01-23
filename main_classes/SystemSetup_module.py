@@ -415,35 +415,40 @@ class SystemSetup:
         Load a set of saved parameters into the system including the variability status of radius and thickness, and the current mode.
         :param saved_params: A dictionary containing the parameters to be loaded.
         """
-
-        #self.clear_system()  # Clear the system first
+        # Clear the system first
+        self.clear_system()
 
         # Load the mode
         if 'mode' in saved_params:
-            self.switch_ref_mode(saved_params['mode'])
+            self.ref_mode = saved_params['mode']
 
         # Load parameters for each surface
         for surface_num, params in saved_params['surfaces'].items():
-            if surface_num in self.surfaces:
-                surface = self.get_surface(surface_num)
-                if saved_params['mode'] == 'radius':
-                    surface.set_radius(params['radius'])
-                elif saved_params['mode'] == 'curvature':
-                    surface.set_curvature(params['curvature'])
-                surface.set_thickness(params['thickness'])
+            # Check if the surface exists; if not, create it
+            if surface_num not in self.surfaces:
+                self.surfaces[surface_num] = self.Surface(self, surface_num, params['radius'], params['thickness'], params.get('material'))
 
-                if params['material'] is not None:
-                    surface.set_material(params['material'])
+            surface = self.surfaces[surface_num]
 
-                if params['radius_variable']:
-                    surface.make_radius_variable()
-                else:
-                    surface.make_radius_fixed()
+            # Update surface properties
+            if self.ref_mode == 'radius':
+                surface.set_radius(params['radius'])
+            elif self.ref_mode == 'curvature':
+                surface.set_curvature(params['curvature'])
+            surface.set_thickness(params['thickness'])
 
-                if params['thickness_variable']:
-                    surface.make_thickness_variable()
-                else:
-                    surface.make_thickness_fixed()
+            if params.get('material') is not None:
+                surface.set_material(params['material'])
+
+            if params['radius_variable']:
+                surface.make_radius_variable()
+            else:
+                surface.make_radius_fixed()
+
+            if params['thickness_variable']:
+                surface.make_thickness_variable()
+            else:
+                surface.make_thickness_fixed()
 
 
       def print_saved_systems(self):
@@ -1020,8 +1025,6 @@ class SystemSetup:
                         # Print the state
                         print("DEBUG: Printing the state")
                         print(self.print_current_system())
-
-                        self.clear_system()
 
                         self.load_system_parameters(node_state)
 
