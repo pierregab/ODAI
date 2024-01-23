@@ -215,6 +215,31 @@ class SystemSetup:
         surface_count = len(matches)
 
         return surface_count
+      
+      def get_surface_thicknesses_from_codev(self):
+        # Get the current parameters for all surfaces from CODE V
+        result = self.cv.Command("LIS")
+
+        # Regular expression pattern to extract surface thicknesses
+        pattern = r"\s+(STO|\d+):\s+[-\d\.Ee\+\-]+\s+([-\d\.]+)"
+
+        matches = re.finditer(pattern, result, re.MULTILINE)
+
+        surface_thicknesses = {}
+        for match in matches:
+            surface_number = match.group(1)
+            thickness = float(match.group(2))
+
+            # Handle "STO" as surface number 1
+            if surface_number == "STO":
+                surface_number = 1
+            else:
+                surface_number = int(surface_number)
+
+            surface_thicknesses[surface_number] = thickness
+
+        return surface_thicknesses
+
 
 
       def print_current_system(self):
@@ -498,6 +523,14 @@ class SystemSetup:
 
             except Exception as e:
                 print(f"Error updating surface {surface_num}: {e}")
+
+        # Compare and update thicknesses in CODE V
+        codev_thicknesses = self.get_surface_thicknesses_from_codev()
+        for surface_num, surface in self.surfaces.items():
+            if surface_num in codev_thicknesses and surface.thickness != codev_thicknesses[surface_num]:
+                # Update thickness in CODE V to match Python
+                surface.set_thickness(surface.thickness)
+
 
 
 
