@@ -423,6 +423,11 @@ class SystemSetup:
         python_surface_count = len(self.surfaces)
         print(f"Python surface count: {python_surface_count}")
 
+        if codev_surface_count > python_surface_count:
+            # Delete the remaining surfaces in CODE V
+            for surface_num in range(python_surface_count + 1, codev_surface_count + 1):
+                self.cv.Command(f"DEL S{surface_num}")
+
         self.ref_mode = None  # Reset the reference mode
 
 
