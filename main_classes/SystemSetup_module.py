@@ -201,6 +201,22 @@ class SystemSetup:
                 if material and material not in ['0', 'None']:
                     surface.set_material(material)
 
+      def get_surface_count_from_codev(self):
+        # Get the current parameters for all surfaces from CODE V
+        result = self.cv.Command("LIS")
+
+        # Regular expression pattern to match surface lines
+        pattern = r"\s+(STO|\d+):"
+
+        # Find all matches for surfaces
+        matches = re.findall(pattern, result, re.MULTILINE)
+
+        # Count the number of surfaces (including STO if it appears)
+        surface_count = len(matches)
+
+        return surface_count
+
+
       def print_current_system(self):
         # cycle through all surfaces and print their parameters
         for surface in self.surfaces.values():
@@ -387,19 +403,34 @@ class SystemSetup:
 
       def clear_system(self):
         """
-        Clear the current state of the system, removing all existing surfaces except the first one,
+        Clear the current state of the system, removing all existing surfaces except the first two,
         and resetting system-specific attributes to their default state.
         """
-        # Skip deleting the first surface (assuming its key is '1')
-        first_surface_key = 1  # or whatever key represents your first surface
+        preserved_surface_keys = [1, 2]  # Preserving the first two surfaces
 
-        #Delete surfaces in CODE V before clearing them from Python
+        # Find the number of the last surface in Python dictionary
+        last_surface_num = self.get_last_surface_number()
+
+        # Delete surfaces in CODE V before clearing them from Python
         for surface_num, surface in list(self.surfaces.items()):
-            if surface_num != first_surface_key:
+            if surface_num not in preserved_surface_keys:
                 surface.delete_surface()
                 del self.surfaces[surface_num]
 
+        # Compare the number of surfaces in CODE V and in Python
+        codev_surface_count = self.get_surface_count_from_codev()
+        python_surface_count = len(self.surfaces)
+
+        # Delete extra surfaces in CODE V starting from the last one
+        while codev_surface_count > python_surface_count:
+            # Assuming you have a method to delete a surface by number in CODE V
+            self.delete_surface_in_codev(last_surface_num)
+            last_surface_num -= 1
+            codev_surface_count -= 1
+
         self.ref_mode = None  # Reset the reference mode
+
+
 
 
       def save_system_parameters(self):
