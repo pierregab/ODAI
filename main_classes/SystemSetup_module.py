@@ -419,14 +419,9 @@ class SystemSetup:
 
         # Compare the number of surfaces in CODE V and in Python
         codev_surface_count = self.get_surface_count_from_codev()
+        print(f"CODE V surface count: {codev_surface_count}")
         python_surface_count = len(self.surfaces)
-
-        # Delete extra surfaces in CODE V starting from the last one
-        while codev_surface_count > python_surface_count:
-            # Assuming you have a method to delete a surface by number in CODE V
-            self.delete_surface_in_codev(last_surface_num)
-            last_surface_num -= 1
-            codev_surface_count -= 1
+        print(f"Python surface count: {python_surface_count}")
 
         self.ref_mode = None  # Reset the reference mode
 
