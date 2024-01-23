@@ -8,7 +8,15 @@ from affichage import print_decorative_header, print_blank_line
 import re
 
 class SystemNode:
+  id_counter = 0  # Class-level counter for unique IDs
+
+  @classmethod
+  def generate_unique_id(cls):
+      cls.id_counter += 1
+      return cls.id_counter
+
   def __init__(self, system_params, optical_system_state=None,seq_file_path=None, parent=None, merit_function=None, efl = None, is_optimized=False, depth=0, high_debuging=False):
+      self.id = SystemNode.generate_unique_id()
       self.system_params = system_params  # Parameters for saddle point optimization
       self.seq_file_path = seq_file_path
       self.high_debuging = high_debuging

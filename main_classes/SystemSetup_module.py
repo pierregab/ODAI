@@ -532,9 +532,6 @@ class SystemSetup:
                 surface.set_thickness(surface.thickness)
 
 
-
-
-
       def print_saved_systems(self):
         """
         Prints all the saved systems and their corresponding parameters in a formatted manner.
@@ -1021,7 +1018,8 @@ class SystemSetup:
             original_state = self.save_system_parameters()
 
             # Saddle Point File Naming
-            sp_filename = f"{base_file_path}/L{depth+1}_SP{i+1}.seq"
+            # Revised Saddle Point File Naming
+            sp_filename = f"{base_file_path}/D{depth}_Node{current_node.id}_SP{i+1}.seq"
             sp_merit = self.sp_create_and_increase_thickness(sp, reference_surface, current_node.system_params['lens_thickness'], sp_filename, efl)
             self.update_all_surfaces_from_codev(output=False)
 
@@ -1042,7 +1040,7 @@ class SystemSetup:
 
             # Optimize and Save System 1
             self.load_system_parameters(system1_params)
-            system1_filename = f"{base_file_path}/L{depth+1}_SP{i+1}_OptA.seq"
+            system1_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptA.seq"
             self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], 3, 2, efl, system1_filename)
             system1_state = self.save_system_parameters()
             system1_merit_function = self.error_fct(efl, constrained=False)
@@ -1054,7 +1052,7 @@ class SystemSetup:
 
             # Restore original state and Optimize and Save System 2
             self.load_system_parameters(system2_params)
-            system2_filename = f"{base_file_path}/L{depth+1}_SP{i+1}_OptB.seq"
+            system2_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptB.seq"
             self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], 3, 2, efl, system2_filename)
             system2_state = self.save_system_parameters()
             system2_merit_function = self.error_fct(efl, constrained=False)
@@ -1071,7 +1069,7 @@ class SystemSetup:
 
         
       
-      def evolve_optimized_systems(self, system_tree, starting_depth, target_depth, base_file_path, efl):
+      def evolve_optimized_systems(self, system_tree, starting_depth, target_depth, base_file_path, efl, debug = False):
         print_evolution_header(starting_depth, target_depth)
 
         current_depth = starting_depth
@@ -1084,16 +1082,18 @@ class SystemSetup:
             for i, node in enumerate(optimized_nodes):
                 print(f"  Optimizing Node number {i+1} of {len(optimized_nodes)} (Seq File: {node.seq_file_path}) at Depth {current_depth}")
                 
-                # Print the state
-                print("DEBUG: Printing the state")
-                print(self.print_current_system())
+                if debug:
+                  # Print the state
+                  print("DEBUG: Printing the state")
+                  print(self.print_current_system())
 
                 node_state = node.optical_system_state
                 self.load_system_parameters(node_state)
                 
-                # Print the state
-                print("DEBUG: Printing the state")
-                print(self.print_current_system())
+                if debug:
+                  # Print the state
+                  print("DEBUG: Printing the state")
+                  print(self.print_current_system())
 
                 #self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
                 system_tree.print_tree()
@@ -1106,15 +1106,17 @@ class SystemSetup:
                         print("\n")
                         print(f"    Optimizing at Surface {surface}")
 
-                        # Print the state
-                        print("DEBUG: Printing the state")
-                        print(self.print_current_system())
+                        if debug:
+                          # Print the state
+                          print("DEBUG: Printing the state")
+                          print(self.print_current_system())
 
                         self.load_system_parameters(node_state)
 
-                        # Print the state
-                        print("DEBUG: Printing the state")
-                        print(self.print_current_system())
+                        if debug:
+                          # Print the state
+                          print("DEBUG: Printing the state")
+                          print(self.print_current_system())
 
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
