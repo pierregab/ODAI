@@ -387,15 +387,20 @@ class SystemSetup:
 
       def clear_system(self):
         """
-        Clear the current state of the system, removing all existing surfaces
+        Clear the current state of the system, removing all existing surfaces except the first one,
         and resetting system-specific attributes to their default state.
         """
-        # Delete surfaces in CODE V before clearing them from Python
-        for surface in self.surfaces.values():
-            surface.delete_surface()
+        # Skip deleting the first surface (assuming its key is '1')
+        first_surface_key = 1  # or whatever key represents your first surface
 
-        self.surfaces.clear()  # Now clear the Python dictionary
-        self.ref_mode = None   # Reset the reference mode
+        # Delete surfaces in CODE V before clearing them from Python
+        for surface_num, surface in list(self.surfaces.items()):
+            if surface_num != first_surface_key:
+                surface.delete_surface()
+                del self.surfaces[surface_num]
+
+        self.ref_mode = None  # Reset the reference mode
+
 
       def save_system_parameters(self):
         """
