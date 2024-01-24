@@ -157,14 +157,15 @@ class SystemSetup:
         self.cv.Command(f"RDM {'Y' if mode == 'radius' else 'N'}")
 
 
-      def update_all_surfaces_from_codev(self, output=False):
+      def update_all_surfaces_from_codev(self, debug=False):
         # Get the current parameters for all surfaces from CODE V
         result = self.cv.Command("LIS")
 
         # Determine whether the system is in radius or curvature mode
         is_curvature_mode = "CUY" in result.split('\n')[0]
 
-        if output:
+        if debug:
+            print("debuging activated for update_all_surfaces_from_codev")
             print("System is in curvature mode." if is_curvature_mode else "System is in radius mode.")
             lines = result.split('\n')
             for line in lines:
@@ -239,25 +240,7 @@ class SystemSetup:
             surface_thicknesses[surface_number] = thickness
 
         return surface_thicknesses
-
-
-
-      def print_current_system(self):
-        # cycle through all surfaces and print their parameters
-        for surface in self.surfaces.values():
-            print(f"Surface {surface.number}: Radius: {surface.radius}, Thickness: {surface.thickness}, Material: {surface.material}")
-
-
-      def get_ordered_surfaces(self):
-        # Create a sorted list of tuples (surface_number, surface_object)
-        sorted_surfaces = sorted(self.surfaces.items(), key=lambda item: item[1].number)
-
-        # Create a dictionary from the sorted list
-        ordered_surfaces = dict(sorted_surfaces)
-
-        return ordered_surfaces
-
-
+      
       def get_efl_from_codev(self):
         # Execute the LIS command and get the output
         result = self.cv.Command("LIS")
@@ -275,6 +258,22 @@ class SystemSetup:
         else:
             # Return None or raise an error if EFL is not found
             return None
+
+
+      def print_current_system(self):
+        # cycle through all surfaces and print their parameters
+        for surface in self.surfaces.values():
+            print(f"Surface {surface.number}: Radius: {surface.radius}, Thickness: {surface.thickness}, Material: {surface.material}")
+
+
+      def get_ordered_surfaces(self):
+        # Create a sorted list of tuples (surface_number, surface_object)
+        sorted_surfaces = sorted(self.surfaces.items(), key=lambda item: item[1].number)
+
+        # Create a dictionary from the sorted list
+        ordered_surfaces = dict(sorted_surfaces)
+
+        return ordered_surfaces
 
 
 
@@ -567,7 +566,6 @@ class SystemSetup:
 
 
 
-
       ############## Methods for the saddle point ###############
 
 
@@ -731,52 +729,17 @@ class SystemSetup:
         print(f"Added null surfaces {reference_surface_number + 1} and {reference_surface_number + 2}")
 
 
-
-      def add_null_surfaces2(self, reference_surface_number):
-          """
-          Adds two null surfaces in front of the specified reference surface with zero thickness,
-          and the same radius and material as the reference surface.
-
-          :param 
-          reference_surface_number: The number of the reference surface in front of which the null surfaces will be added.
-          """
-          last_surface_number = self.get_last_surface_number()
-
-          # Get properties of the reference surface
-          ref_surface = self.get_surface(reference_surface_number)
-          if ref_surface is None:
-              raise ValueError(f"Reference surface number {reference_surface_number} does not exist.")
-
-          radius = ref_surface.radius
-          material = ref_surface.material
-
-          print(radius)
-          print(material)
-
-          # Insert two new surfaces after the reference surface
-          for i in range(1, 3):
-              new_surface_number = reference_surface_number + i -1
-              # Shift the existing surfaces to make room for the new null surfaces
-              for num in range(last_surface_number, new_surface_number - 1, -1):
-                  self.get_surface(num).number += 1
-                  self.surfaces[num + 1] = self.surfaces.pop(num)
-
-              # Create the new null surface with zero thickness
-              if i == 2 :
-                surface = self.Surface(self, new_surface_number, radius, 0)
-                surface.make_radius_variable()
-              else :
-                surface = self.Surface(self, new_surface_number, radius, 0, material)
-                surface.make_radius_variable()
-
-
-      def modify_curvatures_for_saddle_point(self, surface_numbers, epsilon, efl, output=False):
+      def modify_curvatures_for_saddle_point(self, surface_numbers, epsilon, efl, debug=False):
           """
           Modify the curvatures of specified surfaces to position the system on either side of the saddle point.
           :param surface_numbers: List of two surface numbers whose curvatures will be modified.
           :param epsilon: The small curvature change to be applied.
           :param efl: Effective focal length for optimization.
           """
+
+          if debug:
+              print("debuging activated for modify_curvatures_for_saddle_point")
+
           # Save the current state of the system
           original_system_state = self.save_system_parameters()
 
@@ -790,7 +753,7 @@ class SystemSetup:
           #self.make_all_thicknesses_variable()
           self.optimize_system(efl, constrained=False)
           self.optimize_system(efl, constrained=False)
-          self.update_all_surfaces_from_codev(output=output)
+          self.update_all_surfaces_from_codev(debug=debug)
           system1_params = self.save_system_parameters()  # Save parameters of the first system
 
           # Restore the original system state before modifying for the second system
@@ -806,7 +769,7 @@ class SystemSetup:
           #self.make_all_thicknesses_variable()
           self.optimize_system(efl, constrained=False)
           self.optimize_system(efl, constrained=False)
-          self.update_all_surfaces_from_codev(output=output)
+          self.update_all_surfaces_from_codev(debug=debug)
           system2_params = self.save_system_parameters()  # Save parameters of the second system
 
           return system1_params, system2_params
@@ -901,11 +864,12 @@ class SystemSetup:
           return merit_function
 
 
+
       ############## Saddle point Scan method ###############
 
 
 
-      def perform_sp_scan(self, reference_surface_number, efl, delta_curvature=0.00025, num_points=400, threshold_multiplier=3, output=False):
+      def perform_sp_scan(self, reference_surface_number, efl, delta_curvature=0.00025, num_points=400, threshold_multiplier=3, debug=False):
         # Nested function to evaluate the derivative at a given curvature
         def derivative_at_curvature(curvature, curvatures, derivatives):
             index = np.searchsorted(curvatures, curvature) - 1
@@ -973,7 +937,8 @@ class SystemSetup:
                 if is_smooth_zero(derivatives, i):
                     zero_points.append(zero_point)
 
-        if output:
+        if debug:
+            print("debuging activated for perform_sp_scan, plotting the results")
             # Plot the filtered derivative against curvature with the zero points marked
             plt.plot(filtered_curvatures, filtered_derivatives, label="Filtered Derivative")
             for zp in zero_points:
@@ -1003,13 +968,10 @@ class SystemSetup:
 
       def find_and_optimize_from_saddle_points(self, current_node, system_tree, efl, base_file_path, depth, reference_surface):
         print_subheader(f"Optimizing from Saddle Points - Depth {depth}, Ref. Surface {reference_surface}")
-        # Load the current optical system state from the parent node
-        # self.load_system_parameters(current_node.optical_system_state)
-        # self.update_all_surfaces_from_codev(output=False)
 
         # Perform Saddle Point Scan
         self.switch_ref_mode('curvature')
-        sps = self.perform_sp_scan(reference_surface, efl, output=False)
+        sps = self.perform_sp_scan(reference_surface, efl, debug=False)
         print(f"  Saddle Points Found: {len(sps)}")
       
         for i, sp in enumerate(sps):
@@ -1021,7 +983,7 @@ class SystemSetup:
             # Revised Saddle Point File Naming
             sp_filename = f"{base_file_path}/D{depth}_Node{current_node.id}_SP{i+1}.seq"
             sp_merit = self.sp_create_and_increase_thickness(sp, reference_surface, current_node.system_params['lens_thickness'], sp_filename, efl)
-            self.update_all_surfaces_from_codev(output=False)
+            self.update_all_surfaces_from_codev(debug=False)
 
             # Save the state after creating and increasing thickness
             sp_state = self.save_system_parameters()
@@ -1036,7 +998,7 @@ class SystemSetup:
             surface_numbers = [reference_surface + 1, reference_surface + 2]
 
             # Modify curvatures for two systems around the saddle point
-            system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, output=False)
+            system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, debug=False)
 
             # Optimize and Save System 1
             self.load_system_parameters(system1_params)
@@ -1095,7 +1057,6 @@ class SystemSetup:
                   print("DEBUG: Printing the state")
                   print(self.print_current_system())
 
-                #self.update_all_surfaces_from_codev(output=False)   # Keep this in mind
                 system_tree.print_tree()
 
                 # Perform SP detection and optimization for each optimized node
