@@ -31,7 +31,7 @@ optical_system.set_paraxial_image_distance()
 
 # Optimize the initial system
 optical_system.optimize_system(efl, constrained=False)
-optical_system.update_all_surfaces_from_codev(output=False)
+optical_system.update_all_surfaces_from_codev(debug=False)
 
 
 # Save initial system parameters

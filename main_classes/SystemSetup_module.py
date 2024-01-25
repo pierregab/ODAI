@@ -1003,7 +1003,8 @@ class SystemSetup:
             # Optimize and Save System 1
             self.load_system_parameters(system1_params)
             system1_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptA.seq"
-            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], 3, 2, efl, system1_filename)
+            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
+                                                 , reference_surface, efl, system1_filename)
             system1_state = self.save_system_parameters()
             system1_merit_function = self.error_fct(efl, constrained=False)
             system1_efl = self.get_efl_from_codev()
@@ -1015,7 +1016,8 @@ class SystemSetup:
             # Restore original state and Optimize and Save System 2
             self.load_system_parameters(system2_params)
             system2_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptB.seq"
-            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], 3, 2, efl, system2_filename)
+            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
+                                                 , reference_surface, efl, system2_filename)
             system2_state = self.save_system_parameters()
             system2_merit_function = self.error_fct(efl, constrained=False)
             system2_efl = self.get_efl_from_codev()
