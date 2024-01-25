@@ -56,6 +56,7 @@ system_tree.print_tree()
 
 # Make final optimization
 system_tree.final_optimization(optical_system, efl, base_file_path)
+system_tree.print_final_optimized_systems_table()
 
 #system_tree.plot_optical_system_tree()
 

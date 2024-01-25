@@ -303,3 +303,44 @@ class SystemTree:
             if node.depth > max_depth:
                 max_depth = node.depth
         return max_depth
+    
+
+    def print_final_optimized_systems_table(self):
+        """
+        Print a fancy table of all final optimized systems, sorted by their merit function values.
+        Includes additional interesting data for analysis.
+        """
+        final_depth = self.find_final_depth()
+        final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
+
+        # Collect data for all final optimized systems
+        optimized_systems_data = []
+        for node in final_depth_nodes:
+            parent_id = node.parent.id if node.parent else 'Root'
+            num_children = len(node.children)
+            optimized_systems_data.append({
+                'Node ID': node.id,
+                'Parent ID': parent_id,
+                'Merit Function': node.merit_function,
+                'EFL': node.efl,
+                'Children Count': num_children,
+                'SEQ File Path': node.seq_file_path
+            })
+
+        # Sort the systems by merit function
+        optimized_systems_data.sort(key=lambda x: x['Merit Function'])
+
+        # Print the table header
+        headers = ['Node ID', 'Parent ID', 'Merit Function', 'EFL', 'Children Count', 'SEQ File Path']
+        header_line = " | ".join("{:<15}".format(header) for header in headers)
+        print(header_line)
+        print("-" * len(header_line))
+
+        # Print each row in the table
+        for system in optimized_systems_data:
+            row_data = [system[header] for header in headers]
+            print(" | ".join("{:<15}".format(data) for data in row_data))
+
+        # Check if there are no systems to display
+        if not optimized_systems_data:
+            print("No optimized systems available at the final depth.")
