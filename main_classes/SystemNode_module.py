@@ -250,14 +250,16 @@ class SystemTree:
     ################################# Final optimisation #################################
         
     
-    def final_optimization(self, system_setup, efl, final_depth, base_file_path):
+    def final_optimization(self, system_setup, efl, base_file_path):
         """
-        Perform final optimization on all nodes at the final depth.
+        Perform final optimization on all nodes at the maximum depth of the tree.
         :param system_setup: Instance of SystemSetup class for performing optimization.
         :param efl: Effective focal length for optimization.
-        :param final_depth: The final depth of the tree to perform optimization on.
         :param base_file_path: Base path for saving optimized systems.
         """
+        # Find the final depth of the tree
+        final_depth = self.find_final_depth()
+
         # Find all optimized nodes at the final depth
         final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
 
@@ -290,3 +292,14 @@ class SystemTree:
 
             # Print the merit function of the optimized system
             print(f"Node {node.id} Optimized: Merit Function: {node.merit_function}, Saved at: {optimized_file_path}")
+
+    def find_final_depth(self):
+        """
+        Find the maximum depth of the tree.
+        :return: The maximum depth among all nodes in the tree.
+        """
+        max_depth = 0
+        for node in self.all_nodes:
+            if node.depth > max_depth:
+                max_depth = node.depth
+        return max_depth
