@@ -53,7 +53,11 @@ optical_system.evolve_optimized_systems(system_tree, starting_depth, target_dept
 
 # Print and plot the system tree
 system_tree.print_tree()
-system_tree.plot_optical_system_tree()
+
+# Make final optimization
+system_tree.final_optimization(optical_system, efl, target_depth, base_file_path)
+
+#system_tree.plot_optical_system_tree()
 
 # End the CODE V session
 optical_system.stop_session()

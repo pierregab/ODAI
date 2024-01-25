@@ -245,3 +245,48 @@ class SystemTree:
 
         label = "IMG:" if is_image else f"{surface_num:4}:"
         print(f"{label}{radius:>{max_radius_len}} {thickness:>{max_thickness_len}} {material_str} {radius_variable:>4}   {thickness_variable:>4}")
+
+
+    ################################# Final optimisation #################################
+        
+    
+    def final_optimization(self, system_setup, efl, final_depth, base_file_path):
+        """
+        Perform final optimization on all nodes at the final depth.
+        :param system_setup: Instance of SystemSetup class for performing optimization.
+        :param efl: Effective focal length for optimization.
+        :param final_depth: The final depth of the tree to perform optimization on.
+        :param base_file_path: Base path for saving optimized systems.
+        """
+        # Find all optimized nodes at the final depth
+        final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
+
+        for i, node in enumerate(final_depth_nodes):
+            print(f"Optimizing Node {i+1}/{len(final_depth_nodes)} at Final Depth {final_depth}")
+
+            # Load the state of the node into SystemSetup
+            system_setup.load_system_parameters(node.optical_system_state)
+
+            # Make all radii, thicknesses, and applicable materials variable for optimization
+            system_setup.make_all_thicknesses_variable()
+            system_setup.make_all_radii_variable()
+            system_setup.make_all_materials_variable()
+
+            # Perform optimization
+            system_setup.optimize_system(efl, constrained=True)
+
+            # Update and save the optimized state
+            system_setup.update_all_surfaces_from_codev()
+            optimized_state = system_setup.save_system_parameters()
+
+            # Update the node's state and merit function
+            node.optical_system_state = optimized_state
+            node.merit_function = system_setup.error_fct(efl, constrained=False)
+
+            # Save the optimized system
+            optimized_file_path = f"{base_file_path}/FinalOptimized_Node{node.id}.seq"
+            system_setup.save_system(optimized_file_path)
+            node.seq_file_path = optimized_file_path
+
+            # Print the merit function of the optimized system
+            print(f"Node {node.id} Optimized: Merit Function: {node.merit_function}, Saved at: {optimized_file_path}")

@@ -425,6 +425,17 @@ class SystemSetup:
             self.get_surface(surface_num).make_thickness_variable()
         print("All thicknesses have been made variable.")
 
+      def make_all_materials_variable(self):
+        """
+        Make the materials of all surfaces variable for optimization.
+        Only applies to surfaces with defined materials.
+        """
+        for surface_num in self.surfaces.keys():
+            surface = self.get_surface(surface_num)
+            if surface.material:
+                surface.make_material_variable()
+        print("All materials have been made variable.")
+
       def clear_system(self):
         """
         Clear the current state of the system, removing all existing surfaces except the first two,
