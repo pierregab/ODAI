@@ -9,7 +9,6 @@ SP parameters :
 epsilon 
 lens_thickness_steps
 air_distance_steps
-air_distance_steps
 lens_thickness
 base_material ?
 
