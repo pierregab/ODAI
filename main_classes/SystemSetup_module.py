@@ -976,6 +976,11 @@ class SystemSetup:
                 if is_smooth_zero(derivatives, i):
                     zero_points.append(zero_point)
 
+        # If there is no zero point, return the starting point (same curvature)
+        if not zero_points:
+            zero_points.append(initial_curvature)
+            print("SP scan doesn't return result, returning the starting point.")
+
         if debug:
             print("debuging activated for perform_sp_scan, plotting the results")
             # Plot the filtered derivative against curvature with the zero points marked
