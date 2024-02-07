@@ -544,21 +544,6 @@ class SystemSetup:
             except Exception as e:
                 print(f"Error updating surface {surface_num}: {e}")
 
-        # Ensure the system in CODE V matches the expected configuration
-        actual_surface_count = self.get_surface_count_from_codev()
-        expected_surface_count = len(saved_params['surfaces'])
-
-        if actual_surface_count > expected_surface_count:
-            # Delete the last extra surface in CODE V
-            self.cv.Command(f"DEL S{actual_surface_count}")
-            print(f"Deleted unexpected last surface S{actual_surface_count} in CODE V to match the expected configuration.")
-
-        # Set the paraxial condition on the new last surface if necessary
-        new_last_surface_number = self.get_last_surface_number()
-        if new_last_surface_number:
-            # Example command to set the paraxial condition, adjust as needed
-            self.cv.Command(f"PAR S{new_last_surface_number}")
-            print(f"Set paraxial condition on the new last surface S{new_last_surface_number}.")
 
         # Compare and update thicknesses in CODE V
         codev_thicknesses = self.get_surface_thicknesses_from_codev()
