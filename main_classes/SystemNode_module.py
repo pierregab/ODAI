@@ -308,7 +308,8 @@ class SystemTree:
     def print_final_optimized_systems_table(self):
         """
         Print a fancy table of all final optimized systems, sorted by their merit function values.
-        Includes additional interesting data for analysis.
+        Includes additional interesting data for analysis. Handles cases where the merit function is
+        'No merit function' and sorts accordingly.
         """
         final_depth = self.find_final_depth()
         final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
@@ -318,17 +319,18 @@ class SystemTree:
         for node in final_depth_nodes:
             parent_id = node.parent.id if node.parent else 'Root'
             num_children = len(node.children)
+            merit_function = node.merit_function if isinstance(node.merit_function, float) else float('inf')  # Assign a high value for sorting
             optimized_systems_data.append({
                 'Node ID': node.id,
                 'Parent ID': parent_id,
-                'Merit Function': node.merit_function,
+                'Merit Function': merit_function if merit_function != float('inf') else "No merit function",
                 'EFL': node.efl,
                 'Children Count': num_children,
                 'SEQ File Path': node.seq_file_path
             })
 
-        # Sort the systems by merit function
-        optimized_systems_data.sort(key=lambda x: x['Merit Function'])
+        # Sort the systems by merit function, placing 'No merit function' at the end
+        optimized_systems_data.sort(key=lambda x: float('inf') if x['Merit Function'] == "No merit function" else x['Merit Function'])
 
         # Print the table header
         headers = ['Node ID', 'Parent ID', 'Merit Function', 'EFL', 'Children Count', 'SEQ File Path']
@@ -339,8 +341,16 @@ class SystemTree:
         # Print each row in the table
         for system in optimized_systems_data:
             row_data = [system[header] for header in headers]
-            print(" | ".join("{:<15}".format(data) for data in row_data))
+            row_data_formatted = []
+            for data in row_data:
+                # Format 'Merit Function' specifically to handle 'No merit function' text properly
+                if header == 'Merit Function' and data == "No merit function":
+                    row_data_formatted.append("{:<15}".format(data))
+                else:
+                    row_data_formatted.append("{:<15}".format(str(data)))
+            print(" | ".join(row_data_formatted))
 
         # Check if there are no systems to display
         if not optimized_systems_data:
             print("No optimized systems available at the final depth.")
+
