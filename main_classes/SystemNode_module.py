@@ -344,7 +344,7 @@ class SystemTree:
             row_data_formatted = []
             for data in row_data:
                 # Format 'Merit Function' specifically to handle 'No merit function' text properly
-                if header == 'Merit Function' and data == "No merit function":
+                if headers == 'Merit Function' and data == "No merit function":
                     row_data_formatted.append("{:<15}".format(data))
                 else:
                     row_data_formatted.append("{:<15}".format(str(data)))
