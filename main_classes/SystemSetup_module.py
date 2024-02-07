@@ -1130,8 +1130,9 @@ class SystemSetup:
                           print(self.print_current_system())
 
                         # Print ref surface curvature
-                        ref_surface = 1/self.get_surface(surface)
-                        print(f"Ref Surface Curvature: {ref_surface.radius}")
+                        ref_surface = self.get_surface(surface)
+                        ref_curvature = 1/ref_surface.radius
+                        print(f"Ref Surface Curvature: {ref_curvature}")
 
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
