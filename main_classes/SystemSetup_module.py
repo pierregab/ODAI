@@ -938,6 +938,8 @@ class SystemSetup:
 
         # Define initial curvature based on the reference surface
         initial_curvature = 1 / self.get_surface(reference_surface_number).radius
+        # Print initial curvature
+        print(f"Initial Curvature: {initial_curvature}")
 
         # Arrays to store curvatures and corresponding MF values
         curvatures = np.linspace(initial_curvature - delta_curvature * num_points / 2, 
@@ -1128,7 +1130,7 @@ class SystemSetup:
                           print(self.print_current_system())
 
                         # Print ref surface curvature
-                        ref_surface = self.get_surface(surface)
+                        ref_surface = 1/self.get_surface(surface)
                         print(f"Ref Surface Curvature: {ref_surface.radius}")
 
                         self.add_null_surfaces(surface)
