@@ -934,6 +934,8 @@ class SystemSetup:
             return np.std(window) < threshold  # using the same threshold as before
 
 
+        # FAUT UPDATE SUR CODEV !!!!!!
+
         # Define initial curvature based on the reference surface
         initial_curvature = 1 / self.get_surface(reference_surface_number).radius
 
@@ -1124,6 +1126,10 @@ class SystemSetup:
                           # Print the state
                           print("DEBUG: Printing the state")
                           print(self.print_current_system())
+
+                        # Print ref surface curvature
+                        ref_surface = self.get_surface(surface)
+                        print(f"Ref Surface Curvature: {ref_surface.radius}")
 
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
