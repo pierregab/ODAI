@@ -511,9 +511,6 @@ class SystemSetup:
                 self.surfaces[surface_num].delete_surface()
                 del self.surfaces[surface_num]
 
-        last_surface_num = self.get_last_surface_number()
-        self.surfaces[last_surface_num].delete_surface()
-
         # Load parameters for each surface in the saved parameters
         for surface_num, params in saved_params['surfaces'].items():
             # Create a new surface if it does not exist
@@ -546,6 +543,15 @@ class SystemSetup:
 
             except Exception as e:
                 print(f"Error updating surface {surface_num}: {e}")
+
+        # Compare the number of surfaces in CODE V and in Python
+        codev_surface_count = self.get_surface_count_from_codev()
+        python_surface_count = len(self.surfaces)
+
+        if codev_surface_count > python_surface_count:
+            # Delete the remaining surfaces in CODE V
+            for surface_num in range(python_surface_count , codev_surface_count + 1):
+                self.cv.Command(f"DEL S{surface_num}")
 
 
         # Compare and update thicknesses in CODE V
