@@ -511,6 +511,9 @@ class SystemSetup:
                 self.surfaces[surface_num].delete_surface()
                 del self.surfaces[surface_num]
 
+        last_surface_num = self.get_last_surface_number()
+        self.surfaces[last_surface_num].delete_surface()
+
         # Load parameters for each surface in the saved parameters
         for surface_num, params in saved_params['surfaces'].items():
             # Create a new surface if it does not exist
