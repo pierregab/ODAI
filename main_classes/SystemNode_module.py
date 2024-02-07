@@ -270,7 +270,7 @@ class SystemTree:
             system_setup.load_system_parameters(node.optical_system_state)
 
             # Make all radii, thicknesses, and applicable materials variable for optimization
-            system_setup.make_all_thicknesses_variable()
+            system_setup.make_all_thicknesses_variable(last_one = False)
             system_setup.make_all_radii_variable()
             system_setup.make_all_materials_variable()
 

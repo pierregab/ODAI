@@ -419,10 +419,14 @@ class SystemSetup:
             self.get_surface(surface_num).make_thickness_fixed()
         print("All thicknesses have been fixed.")
 
-      def make_all_thicknesses_variable(self):
+      def make_all_thicknesses_variable(self, last_one = True):
         # Iterate over all surfaces and make their thickness variable
-        for surface_num in range(1, self.get_last_surface_number() + 1):
-            self.get_surface(surface_num).make_thickness_variable()
+        if last_one:
+          for surface_num in range(1, self.get_last_surface_number() + 1):
+              self.get_surface(surface_num).make_thickness_variable()
+        else:
+          for surface_num in range(1, self.get_last_surface_number()):
+              self.get_surface(surface_num).make_thickness_variable()
         print("All thicknesses have been made variable.")
 
       def make_all_radii_variable(self):
