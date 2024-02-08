@@ -603,6 +603,125 @@ class SystemSetup:
 
             print("-" * 30)  # Separator for better readability
 
+      def get_spot_diagram(self, affichage = False):
+
+        def extract_text(texte,mot_cle,bool):
+      # Utiliser une expression régulière pour trouver la première occurrence de 'Wavelength'
+          if bool :
+            pattern = re.compile(rf'{mot_cle}\s+\d+\.\d+')
+          else:
+            pattern = re.compile(rf'{mot_cle}')
+          match = pattern.search(texte)
+
+          if match:
+            # Extraire le texte du début jusqu'à l'occurrence de 'Wavelength' (exclu)
+            texte_avant_wavelength = texte[:match.start()].strip()
+            texte = texte[match.start():]
+            return(texte_avant_wavelength,texte)
+          else:
+            # Si 'Wavelength' n'est pas trouvé, retourner le texte entier
+            return ('Error: no match',texte)
+
+
+        def extract_data(text): # retourne un dictionnaire avec les données
+          # Split the text by 'Wavelength' to separate different sections
+          sections = text.split("Wavelength")
+
+          data = {}
+
+          # Regular expression to match numeric patterns
+          number_pattern = re.compile(r"-?\d+\.\d+")
+
+          for section in sections[1:]:  # Skip the first split part as it's before the first 'Wavelength'
+            lines = section.splitlines()
+          
+            # First line after 'Wavelength' contains the wavelength value
+            wavelength = float(lines[0].strip())
+          
+            # Initialize a list to hold X and Y pairs for this wavelength
+            data[wavelength] = []
+
+            # Iterate over the remaining lines to find numeric data
+            for line in lines[1:]:
+              numbers = number_pattern.findall(line)
+              # Convert found strings to floats and pair them as (X, Y)
+              paired_numbers = [(float(numbers[i]), float(numbers[i+1])) for i in range(0, len(numbers), 2)]
+              data[wavelength].extend(paired_numbers)
+
+          return data
+        
+        def extract_values(text):
+          # Regular expression patterns for the required values
+          centroid_and_rms_diameter_patterns = re.compile(r'Displacement of centroid\s+Minimum RMS spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)\s+MM')
+          spot_center_and_spot_diameter_patterns = re.compile(r'Displacement of center of 100% Spot\s+Minimum 100% spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)')
+
+
+          # Search for matches in the text
+          centroid_and_rms_diameter_matches = centroid_and_rms_diameter_patterns.search(text)
+          spot_center_and_spot_diameter_matches = spot_center_and_spot_diameter_patterns.search(text)
+
+          # Extract the values
+          centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
+          spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
+
+          return {
+              'centroid_x': centroid_x,
+              'centroid_y': centroid_y,
+              'rms_diameter': rms_diameter,
+              'spot_center_x': spot_center_x,
+              'spot_center_y': spot_center_y,
+              'spot_diameter': spot_diameter
+          }
+
+
+        def plot_combined_data(data):
+          plt.figure()
+
+          # Générer une palette de couleurs
+          colors = plt.cm.jet(np.linspace(0, 1, len(data)))
+
+          for (wavelength, points), color in zip(data.items(), colors):
+            x_values1, y_values = zip(*points)
+            x_values2 = [-x for x in x_values1] # Symmetric points for the other side of the axis not included in the data    
+            x_values = list(x_values1) + x_values2
+            y_values = y_values + y_values
+            plt.scatter(x_values, y_values, color=color, label=f"{wavelength} nm")
+
+          plt.title("Ray Coordinates for Different Wavelengths")
+          plt.xlabel("X (MM)")
+          plt.ylabel("Y (MM)")
+          plt.legend()
+          plt.grid(True)
+          plt.show()
+
+        self.cv.Command("SPO; CAN;")
+        self.cv.Command("SPO")
+        self.cv.Command("LIS YES;")
+            
+
+        info=self.cv.Command("GO")
+        
+        values_3_degrees,info = extract_text(info, 'Wavelength',True)
+        data_3_degrees,info = extract_text(info, "Ray",False)
+
+        values_6_degrees,info = extract_text(info, "Wavelength",True)
+        data_6_degrees,info = extract_text(info, "Ray",False)
+
+        values_0_degrees,info = extract_text(info, "Wavelength",True)
+        data_0_degrees,final_values = extract_text(info, "The",False)
+
+        text=[values_3_degrees,values_6_degrees,values_0_degrees,final_values]
+        data=[data_3_degrees,data_6_degrees,data_0_degrees]
+
+        extracted_data = [extract_data(datas) for datas in data]
+
+        if affichage :
+          plot_combined_data(extracted_data[0])
+          plot_combined_data(extracted_data[1])
+          plot_combined_data(extracted_data[2])
+
+        extracted_values= [extract_values(texts) for texts in text[0:3]]
+
 
 
       ############## Methods for the saddle point ###############
