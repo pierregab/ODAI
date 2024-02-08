@@ -269,7 +269,7 @@ class SystemTree:
             # Load the state of the node using the specified command format
             if node.seq_file_path:
                 load_command = f'run"{node.seq_file_path}";GO'
-                self.cv.Command(load_command)
+                system_setup.cv.Command(load_command)
             else:
                 print(f"No SEQ file path provided for Node {node.id}, skipping load.")
 
