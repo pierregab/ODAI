@@ -136,6 +136,10 @@ class SystemSetup:
         # Set entrance pupil diameter
         self.cv.Command(f"EPD {diameter}")
 
+      def set_fd(self, fd):
+        # Set focal distance
+        self.cv.Command(f"FNO {fd}")
+
       def set_dimensions(self, dimension_unit):
         # Set measurement unit (e.g., 'mm' or 'm')
         self.cv.Command(f"DIM {dimension_unit}")
