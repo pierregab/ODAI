@@ -266,8 +266,12 @@ class SystemTree:
         for i, node in enumerate(final_depth_nodes):
             print(f"Optimizing Node {i+1}/{len(final_depth_nodes)} at Final Depth {final_depth}")
 
-            # Load the state of the node into SystemSetup
-            system_setup.load_system_parameters(node.optical_system_state)
+            # Load the state of the node using the specified command format
+            if node.seq_file_path:
+                load_command = f'run"{node.seq_file_path}";GO'
+                self.cv.Command(load_command)
+            else:
+                print(f"No SEQ file path provided for Node {node.id}, skipping load.")
 
             # Make all radii, thicknesses, and applicable materials variable for optimization
             system_setup.make_all_thicknesses_variable(last_one = False)
@@ -275,7 +279,12 @@ class SystemTree:
             system_setup.make_all_materials_variable()
 
             # Perform optimization
-            system_setup.optimize_system(efl, constrained=False)
+            self.cv.Command('AUT')
+            self.cv.Command('IMP 1E-10')
+            self.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
+            self.cv.Command('MNT 0.2')
+            self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
+            self.cv.Command("GO")
 
             # Update and save the optimized state
             system_setup.update_all_surfaces_from_codev()
@@ -292,6 +301,7 @@ class SystemTree:
 
             # Print the merit function of the optimized system
             print(f"Node {node.id} Optimized: Merit Function: {node.merit_function}, Saved at: {optimized_file_path}")
+
 
     def find_final_depth(self):
         """
