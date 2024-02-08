@@ -279,12 +279,12 @@ class SystemTree:
             system_setup.make_all_materials_variable()
 
             # Perform optimization
-            self.cv.Command('AUT')
-            self.cv.Command('IMP 1E-10')
-            self.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
-            self.cv.Command('MNT 0.2')
-            self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
-            self.cv.Command("GO")
+            system_setup.cv.Command('AUT')
+            system_setup.cv.Command('IMP 1E-10')
+            system_setup.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
+            system_setup.cv.Command('MNT 0.2')
+            system_setup.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
+            system_setup.cv.Command("GO")
 
             # Update and save the optimized state
             system_setup.update_all_surfaces_from_codev()
