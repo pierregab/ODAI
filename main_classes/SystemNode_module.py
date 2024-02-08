@@ -275,7 +275,7 @@ class SystemTree:
             system_setup.make_all_materials_variable()
 
             # Perform optimization
-            system_setup.optimize_system(efl, constrained=True)
+            system_setup.optimize_system(efl, constrained=False)
 
             # Update and save the optimized state
             system_setup.update_all_surfaces_from_codev()
