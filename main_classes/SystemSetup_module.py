@@ -281,17 +281,12 @@ class SystemSetup:
 
 
 
-      def optimize_system(self, efl, constrained = True, output_angle = True):
+      def optimize_system(self, efl, constrained = False):
         # Optimize the system
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
         if not constrained:
-          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
-
-        last_surface_number = self.get_last_surface_number()
-
-        if output_angle:
-          self.cv.Command("UMX S" + str(last_surface_number) + "W1 Z1 < 10")
+          self.cv.Command('MXT  1E10')
 
         if constrained:
           self.cv.Command("MNA 0")
@@ -354,11 +349,13 @@ class SystemSetup:
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
         if not constrained:
-          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
+          self.cv.Command('MXT  1E10')
 
         if constrained:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
+          
+        self.cv.Command("MNT 0")
 
         self.cv.Command('MNC 0')
         self.cv.Command("MXC 0")
