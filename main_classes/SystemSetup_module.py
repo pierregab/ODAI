@@ -297,6 +297,8 @@ class SystemSetup:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
 
+        self.cv.Command("MNT 0")
+
         self.cv.Command("MXC 100")
         self.cv.Command('MNC 25')
         self.cv.Command("IMP 1E-15")
