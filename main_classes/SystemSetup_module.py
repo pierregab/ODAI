@@ -383,7 +383,7 @@ class SystemSetup:
             self.cv.Command("MXT 60")
 
         #self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
-        self.cv.Command("GO")  # Perform optimization
+        result = self.cv.Command("GO")  # Perform optimization
 
         # Regular expression to find the error function value in scientific notation
         match = re.search(r'ERR\. F\.\s*=\s*([+-]?[0-9]*\.?[0-9]+(?:[Ee][+-]?[0-9]+)?)', result)
