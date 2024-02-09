@@ -348,8 +348,7 @@ class SystemSetup:
         self.cv.Command("GO")  # Perform global synthesis
 
 
-      def error_fct(self, efl, constrained = True):
-        self.cv.Command("AUT ; CAN")
+      def error_fct(self, efl, constrained = False):
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
         if not constrained:
@@ -358,32 +357,33 @@ class SystemSetup:
         if constrained:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
-          
+
         self.cv.Command("MNT 0")
 
-        self.cv.Command('MNC 0')
-        self.cv.Command("MXC 0")
+        self.cv.Command("MXC 100")
+        self.cv.Command('MNC 25')
         self.cv.Command("IMP 1E-15")
         self.cv.Command('WFR n') # Opti with transverse aberration
-        self.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
 
+        self.cv.Command("DRA S0..I y")
         self.cv.Command("CNV 0") # Step optimisation
+        self.cv.Command("EFL = " + str(efl)) # Condition on the EFL
 
         if efl == 15 or efl == -15:
-          self.cv.Command("MXT 7")
           if constrained == True:
             self.cv.Command("SD SO Z1 > 12.5")
+            self.cv.Command("MXT 7")
         elif efl == 50 or efl == -50 or efl == -100 or efl == -200:
-          self.cv.Command("MXT 14")
           if constrained == True:
             self.cv.Command("SD SO Z1 > 40")
+            self.cv.Command("MXT 14")
         elif efl == 100 or efl == 200:
-          self.cv.Command("MXT 60")
           if constrained == True:
             self.cv.Command("SD SO Z1 > 75")
+            self.cv.Command("MXT 60")
 
-        self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
-        result = self.cv.Command("GO")  # Perform optimization
+        #self.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
+        self.cv.Command("GO")  # Perform optimization
 
         # Regular expression to find the error function value in scientific notation
         match = re.search(r'ERR\. F\.\s*=\s*([+-]?[0-9]*\.?[0-9]+(?:[Ee][+-]?[0-9]+)?)', result)
