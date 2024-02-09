@@ -293,6 +293,7 @@ class SystemTree:
             # Update the node's state and merit function
             node.optical_system_state = optimized_state
             node.merit_function = system_setup.error_fct(efl, constrained=False)
+            node.efl = system_setup.get_efl_from_codev()
 
             # Save the optimized system
             optimized_file_path = f"{base_file_path}/FinalOptimized_Node{node.id}.seq"
