@@ -29,7 +29,7 @@ triplets_data = [
 
 
 # Loop over each triplet to set up the system and test the merit function
-for triplet in triplets_data:
+for index, triplet in enumerate(triplets_data):
     glass1, glass2, glass3, r1, r1_prime, r2, r2_prime, r3 = triplet
     
     # Create a new lens system
@@ -45,11 +45,17 @@ for triplet in triplets_data:
 
     optical_system.set_paraxial_image_distance()
 
+    optical_system.make_all_thicknesses_variable()
     optical_system.optimize_system(efl=1)
 
-    errorfct = optical_system.error_fct(efl=1)
+    error_fct = optical_system.error_fct(efl=1)
 
-    print("Error function equal " + errorfct)
+
+    file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system
+    optical_system.save_system(file_path, seq=True)  # Assuming save_system has a 'seq' parameter
+
+    # Print the error function value for the triplet
+    print(f"Triplet {index+1} Error Function: {error_fct}")
 
 
     
