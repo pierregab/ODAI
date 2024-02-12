@@ -24,7 +24,7 @@ class OpticalSystemManager:
         self.surface2_thickness = 97.703035
 
         self.base_file_path = "C:/CVUSER"
-        self.target_depth = 0
+        self.target_depth = 1
         self.starting_depth = 0
 
         # Initialize optical system
@@ -101,7 +101,7 @@ class OpticalSystemManager:
 # Usage example
 optical_system_manager = OpticalSystemManager()
 optical_system_manager.set_initial_system_parameters(59.33336, 0.1, "NBK7_SCHOTT", -391.44174, 97.703035)
-optical_system_manager.set_root_parameters(0.5, [0.025, 0.050, 0.075, 0.11], [0], 0.1)
+optical_system_manager.set_root_parameters(1, [0.025, 0.050, 0.075, 0.10], [0], 0.1)
 optical_system_manager.start_system()
 optical_system_manager.evolve_and_optimize()
 optical_system_manager.end_system()
