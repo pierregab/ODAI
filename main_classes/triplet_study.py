@@ -36,12 +36,12 @@ for triplet in triplets_data:
     optical_system.create_new_system()
     
     # Set up the optical glasses and radii for the triplet
-    optical_system.Surface(number=1, radius=r1, thickness = 0.1 , material=glass1)
-    optical_system.Surface(number=2, radius=r1_prime, thickness = 0)
-    optical_system.Surface(number=3, radius=r2, thickness = 0.1, material=glass2)
-    optical_system.Surface(number=4, radius=r2_prime, thickness= 0)
-    optical_system.Surface(number=5, radius=r3, thickness=0.1, material=glass3)
-    optical_system.Surface(number=6, radius=1e10, thickness=0)
+    optical_system.Surface(optical_system, number=1, radius=r1, thickness = 0.1 , material=glass1)
+    optical_system.Surface(optical_system, number=2, radius=r1_prime, thickness = 0)
+    optical_system.Surface(optical_system, number=3, radius=r2, thickness = 0.1, material=glass2)
+    optical_system.Surface(optical_system, number=4, radius=r2_prime, thickness= 0)
+    optical_system.Surface(optical_system, number=5, radius=r3, thickness=0.1, material=glass3)
+    optical_system.Surface(optical_system, number=6, radius=1e10, thickness=0)
 
     optical_system.set_paraxial_image_distance()
 
