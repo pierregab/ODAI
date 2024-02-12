@@ -28,36 +28,41 @@ triplets_data = [
 ]
 
 
-# Loop over each triplet to set up the system and test the merit function
+# Create surfaces with placeholder values outside the loop
+num_surfaces = 6  # Total number of surfaces for a triplet system
+for num in range(1, num_surfaces + 1):
+    thickness = 0.1 if num % 2 != 0 else 0  # Assign thickness 0.1 to glass surfaces, 0 to air gaps
+    optical_system.Surface(optical_system, number=num, radius=1, thickness=thickness, material=None)
+
+# Loop over each triplet to update the system and test the merit function
 for index, triplet in enumerate(triplets_data):
     glass1, glass2, glass3, r1, r1_prime, r2, r2_prime, r3 = triplet
     
-    # Create a new lens system
-    optical_system.create_new_system()
-    
-    # Set up the optical glasses and radii for the triplet
-    optical_system.Surface(optical_system, number=1, radius=r1, thickness = 0.1 , material=glass1)
-    optical_system.Surface(optical_system, number=2, radius=r1_prime, thickness = 0)
-    optical_system.Surface(optical_system, number=3, radius=r2, thickness = 0.1, material=glass2)
-    optical_system.Surface(optical_system, number=4, radius=r2_prime, thickness= 0)
-    optical_system.Surface(optical_system, number=5, radius=r3, thickness=0.1, material=glass3)
-    optical_system.Surface(optical_system, number=6, radius=1e10, thickness=0)
+    # Update the surfaces with the actual triplet data
+    optical_system.surfaces[1].set_parameters(radius=r1, thickness=0.1, material=glass1)
+    optical_system.surfaces[2].set_parameters(radius=r1_prime, thickness=0)
+    optical_system.surfaces[3].set_parameters(radius=r2, thickness=0.1, material=glass2)
+    optical_system.surfaces[4].set_parameters(radius=r2_prime, thickness=0)
+    optical_system.surfaces[5].set_parameters(radius=r3, thickness=0.1, material=glass3)
+    optical_system.surfaces[6].set_parameters(radius=1e10, thickness=0)  # r3' is infinity
 
     optical_system.set_paraxial_image_distance()
 
+    # Make all thicknesses variable and optimize the system
     optical_system.make_all_thicknesses_variable()
-    optical_system.optimize_system(efl=1)
+    optical_system.optimize_system(efl=1)  # Use r3 as the effective focal length
 
-    error_fct = optical_system.error_fct(efl=1)
+    error_fct_value = optical_system.error_fct(efl=1)
 
-
+    # Save the system with a unique file path for each triplet
     file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system
-    optical_system.save_system(file_path, seq=True)  # Assuming save_system has a 'seq' parameter
-
-    optical_system.clear_system()
+    optical_system.save_system(file_path, seq=True)
 
     # Print the error function value for the triplet
-    print(f"Triplet {index+1} Error Function: {error_fct}")
+    print(f"Triplet {index+1} Error Function: {error_fct_value}")
+
+# Stop session after all triplets have been processed
+optical_system.stop_session()
 
 
     
