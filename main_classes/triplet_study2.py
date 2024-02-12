@@ -1,4 +1,5 @@
 from SystemSetup_module import SystemSetup
+import csv
 
 # Initialize SystemSetup and start a session
 optical_system = SystemSetup()
@@ -11,7 +12,8 @@ optical_system.set_dimensions('m')
 optical_system.set_fields([(0, 0.7)])
 
 
-
+# Store tabulated merit function values
+tabulated_merit_functions = []
 
 ################################# PAPER STARTING POINTS #################################
 
@@ -53,21 +55,24 @@ for index, triplet in enumerate(triplets_data):
     # Make all thicknesses variable and optimize the system
     optical_system.make_all_thicknesses_variable(last_one = False)
     optical_system.make_all_radii_variable()
-    optical_system.optimize_system(efl=1, mxt=0.1) 
-
-    error_fct_value = optical_system.error_fct(efl=1)
+    #optical_system.optimize_system(efl=1, mxt=0.1) 
 
     # Save the system with a unique file path for each triplet
     file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system
     optical_system.save_system(file_path, seq=True)
 
-    # Print the error function value for the triplet
-    print(f"Triplet {index+1} Error Function: {error_fct_value}")
+    # Calculate the merit function
+    tabulated_merit = optical_system.error_fct(efl=1)
+    tabulated_merit_functions.append((glass1, glass2, glass3, tabulated_merit))
+
 
 
 
 ################################# NOW COMPARE WITH OUR STARTING POINT #################################
     
+
+# Comparison results
+comparison_results = []
 
 
 # Assuming we have a list of .seq file paths and a dictionary mapping lens numbers to materials
@@ -90,27 +95,41 @@ for triplet in triplets_data:
         optical_system.cv.Command(f"GL1 S5 {glass3}")
         
         # Make all thicknesses and radii variable
-        for i in range(1, 3):
+        for i in range(1, 6):
             optical_system.cv.Command(f"CCY S{i} 0")    
             i+=1
 
-        for i in range(1, 3):
+        for i in range(1, 6):
             optical_system.cv.Command(f"THC S{i} 0")
 
         # Fix all materials
-        for i in range(1, 3):
+        for i in range(1, 6):
             optical_system.cv.Command(f"GC1 S{i} 100")
 
         # Perform optimization
         optical_system.optimize_system(efl=1, mnt=0.02)  # Replace 'efl=1' with the desired effective focal length
         
-        error_fct = optical_system.error_fct(efl=1)
-        print(f"Error function value for {seq_file_path} with materials {glass1}, {glass2}, {glass3}: {error_fct}")
+        # Calculate the optimized merit function
+        optimized_merit = optical_system.error_fct(efl=1)
+        
+        # Record the comparison
+        comparison_results.append({
+            'Seq_File_Path': seq_file_path,
+            'Triplet': f"{glass1}_{glass2}_{glass3}",
+            'Optimized_Merit': optimized_merit,
+        })
 
          # Save the system with a new file name indicating the materials used
         base_name = seq_file_path.split('/')[-1].split('.')[0]  # Extract base name of the file without extension
         optimized_file_path = f"C:/CVUSER/{base_name}_optimized_{glass1}_{glass2}_{glass3}.seq"
         optical_system.save_system(optimized_file_path, seq=True)
+
+# Save the comparison results to a CSV
+csv_file_path = "comparison_results.csv"
+with open(csv_file_path, mode='w', newline='') as file:
+    writer = csv.DictWriter(file, fieldnames=comparison_results[0].keys())
+    writer.writeheader()
+    writer.writerows(comparison_results)
 
 # Stop session after all files have been processed
 optical_system.stop_session()
