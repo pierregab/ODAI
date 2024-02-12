@@ -52,7 +52,7 @@ for index, triplet in enumerate(triplets_data):
     optical_system.surfaces[1].make_thickness_variable()
     optical_system.surfaces[3].make_thickness_variable()
     optical_system.surfaces[5].make_thickness_variable()
-    optical_system.optimize_system(efl=1, mxt=0.1)  # Use r3 as the effective focal length
+    optical_system.optimize_system(efl=1, mxt=0.1) 
 
     error_fct_value = optical_system.error_fct(efl=1)
 
