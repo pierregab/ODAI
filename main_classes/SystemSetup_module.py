@@ -290,8 +290,6 @@ class SystemSetup:
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
         self.cv.Command('MXT' + str(mxt))
-        if not constrained:
-          self.cv.Command('MXT  1E10')
 
         if constrained:
           self.cv.Command("MNA 0")
