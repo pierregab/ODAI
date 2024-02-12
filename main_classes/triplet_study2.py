@@ -13,7 +13,7 @@ optical_system.set_fields([(0, 0.7)])
 
 
 # Store tabulated merit function values
-tabulated_merit_functions = []
+comparison_results = []
 
 ################################# PAPER STARTING POINTS #################################
 
@@ -61,19 +61,22 @@ for index, triplet in enumerate(triplets_data):
     file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system
     optical_system.save_system(file_path, seq=True)
 
-    # Calculate the merit function
-    tabulated_merit = optical_system.error_fct(efl=1)
-    tabulated_merit_functions.append((glass1, glass2, glass3, tabulated_merit))
+    # After setting up, calculate the tabulated merit function for the triplet
+    tabulated_merit = optical_system.error_fct(efl=1)  # Example call, adjust based on actual method
+    
+    # Store the tabulated merit function
+    comparison_results.append({
+        'Triplet_Index': index + 1,
+        'Triplet': f"{glass1}_{glass2}_{glass3}",
+        'Tabulated_Merit': tabulated_merit,
+        'Optimized_Merits': []
+    })
 
 
 
 
 ################################# NOW COMPARE WITH OUR STARTING POINT #################################
     
-
-# Comparison results
-comparison_results = []
-
 
 # Assuming we have a list of .seq file paths and a dictionary mapping lens numbers to materials
 seq_file_paths = ["C:/CVUSER/FinalOptimized_Node15.seq", "C:/CVUSER/FinalOptimized_Node16.seq", "C:/CVUSER/FinalOptimized_Node12.seq", "C:/CVUSER/FinalOptimized_Node10.seq", "C:/CVUSER/FinalOptimized_Node9.seq"] 
@@ -112,24 +115,34 @@ for triplet in triplets_data:
         # Calculate the optimized merit function
         optimized_merit = optical_system.error_fct(efl=1)
         
-        # Record the comparison
-        comparison_results.append({
-            'Seq_File_Path': seq_file_path,
-            'Triplet': f"{glass1}_{glass2}_{glass3}",
-            'Optimized_Merit': optimized_merit,
-        })
+        # Calculate the optimized merit function
+        optimized_merit = optical_system.error_fct(efl=1)  # Example call, adjust based on actual method
+        
+        # Store the optimized merit function for comparison
+        comparison_results['Optimized_Merits'].append((seq_file_path, optimized_merit))
 
+        """
          # Save the system with a new file name indicating the materials used
         base_name = seq_file_path.split('/')[-1].split('.')[0]  # Extract base name of the file without extension
         optimized_file_path = f"C:/CVUSER/{base_name}_optimized_{glass1}_{glass2}_{glass3}.seq"
         optical_system.save_system(optimized_file_path, seq=True)
+        """
 
-# Save the comparison results to a CSV
-csv_file_path = "comparison_results.csv"
+# Finally, export the comparison results to a CSV file
+csv_file_path = "merit_function_comparison.csv"
 with open(csv_file_path, mode='w', newline='') as file:
-    writer = csv.DictWriter(file, fieldnames=comparison_results[0].keys())
+    fieldnames = ['Triplet_Index', 'Triplet', 'Tabulated_Merit', 'Optimized_Merits']
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
-    writer.writerows(comparison_results)
+    for result in comparison_results:
+        # Flatten the optimized merits for CSV output
+        for seq_path, opt_merit in result['Optimized_Merits']:
+            writer.writerow({
+                'Triplet_Index': result['Triplet_Index'],
+                'Triplet': result['Triplet'],
+                'Tabulated_Merit': result['Tabulated_Merit'],
+                'Optimized_Merits': f"{seq_path}: {opt_merit}"
+            })
 
 # Stop session after all files have been processed
 optical_system.stop_session()
