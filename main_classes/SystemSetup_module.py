@@ -285,7 +285,7 @@ class SystemSetup:
 
 
 
-      def optimize_system(self, efl, constrained = False, mxt = 1E10, ):
+      def optimize_system(self, efl, constrained = False, mxt = 1E10, mnt = 0):
         # Optimize the system
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
@@ -295,7 +295,7 @@ class SystemSetup:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
 
-        self.cv.Command("MNT 0")
+        self.cv.Command("MNT" + str(mnt))
 
         self.cv.Command("MXC 100")
         self.cv.Command('MNC 25')

@@ -38,9 +38,10 @@ for seq_file_path in seq_file_paths:
         optical_system.cv.Command(f"GC1 S{i} 100")
 
     # Perform optimization
-    optical_system.optimize_system(efl=1)  # Replace 'efl=1' with the desired effective focal length
+    optical_system.optimize_system(efl=1, mnt=0.02)  # Replace 'efl=1' with the desired effective focal length
     
     error_fct = optical_system.error_fct(efl=1)
+    print(error_fct)
 
     # Optionally, you can save the optimized system with a new file name
     optimized_file_path = seq_file_path.replace(".seq", "_optimized.seq")
