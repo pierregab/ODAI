@@ -11,7 +11,7 @@ optical_system.set_dimensions('m')
 optical_system.set_fields([(0, 0.7)])
 
 # Assuming we have a list of .seq file paths and a dictionary mapping lens numbers to materials
-seq_file_paths = ["path/to/first_file.seq", "path/to/second_file.seq", ...]  # Replace with actual paths
+seq_file_paths = ["C:/CVUSER/FinalOptimized_Node15.seq", "C:/CVUSER/FinalOptimized_Node16.seq", "C:/CVUSER/FinalOptimized_Node12.seq", "C:/CVUSER/FinalOptimized_Node10.seq", "C:/CVUSER/FinalOptimized_Node9.seq"]  # Replace with actual paths
 material_dict = {1: "FK51", 2: "638424.320", 3: "SF1"}  # Replace with actual materials
 
 # Loop over each seq file path
@@ -31,6 +31,8 @@ for seq_file_path in seq_file_paths:
 
     # Perform optimization
     optical_system.optimize_system(efl=1)  # Replace 'efl=1' with the desired effective focal length
+    
+    error_fct = optical_system.error_fct(efl=1)
 
     # Optionally, you can save the optimized system with a new file name
     optimized_file_path = seq_file_path.replace(".seq", "_optimized.seq")
