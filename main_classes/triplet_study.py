@@ -15,10 +15,10 @@ optical_system.set_fields([(0, 0.7)])
 # Example: [("N-FK51A", "N-KZFS11", "N-SF1", 0.78040, -0.26833, -0.28528, -2.09468, 1.4514), ...]
 
 triplets_data = [
-    ("FK51", "KZFS11", "SF1", 0.78040, -0.26833, -0.28528, -2.09468, 1.4514),
-    ("FK51", "KZFS11", "SF10", 0.74376, -0.27169, -0.28857, -2.00724, 1.6283),
-    ("FK51", "KZFS11", "SF4", 0.71635, -0.27411, -0.29081, -1.90816, 1.8667),
-    ("FK51", "KZFS11", "SF8", 0.88060, -0.26021, -0.27696, -2.10795, 1.1926),
+    ("FK51", "638424.320", "SF1", 0.78040, -0.26833, -0.28528, -2.09468, 1.4514),
+    ("FK51", "638424.320", "SF10", 0.74376, -0.27169, -0.28857, -2.00724, 1.6283),
+    ("FK51", "638424.320", "SF4", 0.71635, -0.27411, -0.29081, -1.90816, 1.8667),
+    ("FK51", "638424.320", "SF8", 0.88060, -0.26021, -0.27696, -2.10795, 1.1926),
     ("FK51", "KZFS4", "SF2", 1.11226, -0.22997, -0.24275, -1.9530, 0.98067),
     ("FK51", "KZFS4", "SF57", 0.66332, -0.25813, -0.27093, -1.65476, 3.0816),
     ("FK51", "KZFS5", "SF10", -1.34126, -0.16583, -0.17521, -0.52381, 0.79746),
@@ -49,7 +49,7 @@ for index, triplet in enumerate(triplets_data):
     optical_system.set_paraxial_image_distance()
 
     # Make all thicknesses variable and optimize the system
-    optical_system.make_all_thicknesses_variable()
+    optical_system.make_all_thicknesses_variable(last_one=False)
     optical_system.optimize_system(efl=1)  # Use r3 as the effective focal length
 
     error_fct_value = optical_system.error_fct(efl=1)
