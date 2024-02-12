@@ -47,7 +47,7 @@ for triplet in triplets_data:
 
     optical_system.optimize_system(efl=1)
 
-    errorfct = optical_system.error_fct()
+    errorfct = optical_system.error_fct(efl=1)
 
     print("Error function equal " + errorfct)
 
