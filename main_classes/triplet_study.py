@@ -54,6 +54,8 @@ for index, triplet in enumerate(triplets_data):
     file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system
     optical_system.save_system(file_path, seq=True)  # Assuming save_system has a 'seq' parameter
 
+    optical_system.clear_system()
+
     # Print the error function value for the triplet
     print(f"Triplet {index+1} Error Function: {error_fct}")
 
