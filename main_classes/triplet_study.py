@@ -49,7 +49,7 @@ for index, triplet in enumerate(triplets_data):
     optical_system.set_paraxial_image_distance()
 
     # Make all thicknesses variable and optimize the system
-    optical_system.make_all_thicknesses_variable(last_one=False)
+    optical_system.make_all_thicknesses_variable(last_one=False, mxt = 0.1)
     optical_system.optimize_system(efl=1)  # Use r3 as the effective focal length
 
     error_fct_value = optical_system.error_fct(efl=1)
