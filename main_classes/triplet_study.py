@@ -45,7 +45,7 @@ for triplet in triplets_data:
 
     optical_system.set_paraxial_image_distance()
 
-    optical_system.optimize_system()
+    optical_system.optimize_system(efl=1)
 
     errorfct = optical_system.error_fct()
 
