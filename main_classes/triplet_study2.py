@@ -133,3 +133,35 @@ with open(csv_file_path, mode='w', newline='') as file:
 
 # Stop session after all files have been processed
 optical_system.stop_session()
+
+
+
+# Prepare the final structure for the CSV export
+final_comparison_results = []
+
+# Iterate over each unique triplet to gather its comparison results
+for glass_combination in tabulated_merit_functions:
+    glass1, glass2, glass3, tabulated_merit = glass_combination
+    triplet_identifier = f"{glass1}_{glass2}_{glass3}"
+
+    # Find all optimized merits for this triplet from different starting points
+    optimized_merits = [comp for comp in comparison_results if comp['Triplet'] == triplet_identifier]
+
+    # For each starting point's optimized merit, prepare a row in the final comparison results
+    for optimized_merit in optimized_merits:
+        final_comparison_results.append({
+            'Glass Combination': f"{glass1}, {glass2}, {glass3}",
+            'Tabulated Merit Function': tabulated_merit,
+            'Seq File Path': optimized_merit['Seq_File_Path'],
+            'Optimized Merit Function': optimized_merit['Optimized_Merit']
+        })
+
+# CSV headers
+csv_headers = ['Glass Combination', 'Tabulated Merit Function', 'Seq File Path', 'Optimized Merit Function']
+
+# Export to CSV
+csv_file_path = "final_comparison_results.csv"
+with open(csv_file_path, mode='w', newline='') as file:
+    writer = csv.DictWriter(file, fieldnames=csv_headers)
+    writer.writeheader()
+    writer.writerows(final_comparison_results)
