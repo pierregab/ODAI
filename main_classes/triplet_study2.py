@@ -55,7 +55,7 @@ for index, triplet in enumerate(triplets_data):
     # Make all thicknesses variable and optimize the system
     optical_system.make_all_thicknesses_variable(last_one = False)
     optical_system.make_all_radii_variable()
-    #optical_system.optimize_system(efl=1, mxt=0.1) 
+    optical_system.optimize_system(efl=1, mxt=0.1) 
 
     # Save the system with a unique file path for each triplet
     file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system

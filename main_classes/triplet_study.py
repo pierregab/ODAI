@@ -20,10 +20,6 @@ print(latex_code)
 
 
 
-
-
-
-
 # Assuming df is already prepared as shown in the previous step
 
 # Extracting unique glass combinations for X-axis labels
