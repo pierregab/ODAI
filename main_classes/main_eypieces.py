@@ -5,7 +5,7 @@ class OpticalSystemManager:
     def __init__(self):
         # Default parameters
         self.default_wavelengths = [486.1327, 546.074, 587.5618, 632.2, 657.2722]
-        self.default_entrance_pupil_diameter = 0.5
+        self.default_fd = 5
         self.default_dimensions = 'm'
         self.default_fields = [(0, 3), (0, 6), (0, 35)]
         self.default_efl = 1
@@ -37,7 +37,7 @@ class OpticalSystemManager:
 
         # Set default parameters
         self.optical_system.set_wavelengths(self.default_wavelengths)
-        self.optical_system.set_entrance_pupil_diameter(self.default_entrance_pupil_diameter)
+        self.optical_system.set_fd(self.default_fd)
         self.optical_system.set_dimensions(self.default_dimensions)
         self.optical_system.set_fields(self.default_fields)
 
