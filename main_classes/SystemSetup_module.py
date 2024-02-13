@@ -1181,7 +1181,7 @@ class SystemSetup:
             # For System 1
             if sp_merit is None :
                 print(f"Optimized System 1 from Saddle Point {i+1} did not meet criteria, skipping.")
-            if system1_merit_function is None or system1_merit_function > 2*sp_merit:
+            elif system1_merit_function is None or system1_merit_function > 2*sp_merit:
                 print(f"Optimized System 1 from Saddle Point {i+1} did not meet criteria, skipping.")
             else:
           
@@ -1203,7 +1203,7 @@ class SystemSetup:
             # For System 2
             if sp_merit is None :
                 print(f"Optimized System 2 from Saddle Point {i+1} did not meet criteria, skipping.")
-            if system2_merit_function is None or system2_merit_function > 2*sp_merit:
+            elif system2_merit_function is None or system2_merit_function > 2*sp_merit:
                 print(f"Optimized System 2 from Saddle Point {i+1} did not meet criteria, skipping.")
             else:
 
