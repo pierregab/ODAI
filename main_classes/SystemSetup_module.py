@@ -1137,7 +1137,7 @@ class SystemSetup:
 
       def find_and_optimize_from_saddle_points(self, current_node, system_tree, efl, base_file_path, depth, reference_surface):
         print_subheader(f"Optimizing from Saddle Points - Depth {depth}, Ref. Surface {reference_surface}")
-        
+
         # Perform Saddle Point Scan
         self.switch_ref_mode('curvature')
         sps = self.perform_sp_scan(reference_surface, efl, debug=False)
@@ -1179,6 +1179,8 @@ class SystemSetup:
             system1_efl = self.get_efl_from_codev()
 
             # For System 1
+            if sp_merit is None :
+                print(f"Optimized System 1 from Saddle Point {i+1} did not meet criteria, skipping.")
             if system1_merit_function is None or system1_merit_function > 2*sp_merit:
                 print(f"Optimized System 1 from Saddle Point {i+1} did not meet criteria, skipping.")
             else:
@@ -1199,6 +1201,8 @@ class SystemSetup:
 
             # Optimize and Save System 2, including merit function checks...
             # For System 2
+            if sp_merit is None :
+                print(f"Optimized System 2 from Saddle Point {i+1} did not meet criteria, skipping.")
             if system2_merit_function is None or system2_merit_function > 2*sp_merit:
                 print(f"Optimized System 2 from Saddle Point {i+1} did not meet criteria, skipping.")
             else:
