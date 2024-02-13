@@ -1,69 +1,62 @@
-from SystemSetup_module import SystemSetup
-from SystemNode_module import SystemNode, SystemTree
+import pandas as pd
+import matplotlib.pyplot as plt
+import pandas as pd
 
-optical_system = SystemSetup()  # Initialize SystemSetup
-optical_system.start_session()
-optical_system.create_new_system()
+# Load the dataset
+df = pd.read_csv('final_comparison_results.csv')
 
-# Set wavelengths, entrance pupil diameter, and dimensions
-optical_system.set_wavelengths([486, 587, 656])
-optical_system.set_fd(5)
-optical_system.set_dimensions('m')
-optical_system.set_fields([(0, 0.7)])
+# Display the first few rows to verify it's loaded correctly
+print(df.head())
 
-# (Glass 1, Glass 2, Glass 3, r1, r1', r2, r2', r3)
-# Example: [("N-FK51A", "N-KZFS11", "N-SF1", 0.78040, -0.26833, -0.28528, -2.09468, 1.4514), ...]
+# Calculating improvement
+df['Improvement'] = ((df['Tabulated Merit Function'] - df['Optimized Merit Function']) / df['Tabulated Merit Function']) * 100
 
-triplets_data = [
-    ("FK51", "638424.320", "SF1", 0.78040, -0.26833, -0.28528, -2.09468, 1.4514),
-    ("FK51", "638424.320", "SF10", 0.74376, -0.27169, -0.28857, -2.00724, 1.6283),
-    ("FK51", "638424.320", "SF4", 0.71635, -0.27411, -0.29081, -1.90816, 1.8667),
-    ("FK51", "638424.320", "SF8", 0.88060, -0.26021, -0.27696, -2.10795, 1.1926),
-    ("FK51", "KZFS4", "SF2", 1.11226, -0.22997, -0.24275, -1.9530, 0.98067),
-    ("FK51", "KZFS4", "SF57", 0.66332, -0.25813, -0.27093, -1.65476, 3.0816),
-    ("FK51", "KZFS5", "SF10", -1.34126, -0.16583, -0.17521, -0.52381, 0.79746),
-    ("FK51", "KZFS5", "SF57", 0.91218, -0.23371, -0.25026, -1.56151, 1.4607),
-    ("FK51", "LAK10", "SF66", 0.64693, -0.22008, -0.23801, -0.77359, 7.0171),
-    ("FK51", "LAK10", "SF67", 0.65421, -0.21678, -0.23460, -0.76903, 6.2693)
-]
+# Finding the best starting point for each glass combination
+best_starting_points = df.loc[df.groupby('Glass Combination')['Optimized Merit Function'].idxmin()]
+
+# Highlight the best starting point row
+def highlight_best(row, best):
+    if row.name in best.index:
+        return ['background-color: yellow']*len(row)
+    return ['']*len(row)
+
+styled_df = best_starting_points.style.apply(highlight_best, best=best_starting_points, axis=1)
+
+# Display or save the styled DataFrame
+styled_df.to_excel('optimized_results_highlighted.xlsx')  # Saving to an Excel file
 
 
-# Create surfaces with placeholder values outside the loop
-num_surfaces = 6  # Total number of surfaces for a triplet system
-for num in range(1, num_surfaces + 1):
-    thickness = 0.1 if num % 2 != 0 else 0  # Assign thickness 0.1 to glass surfaces, 0 to air gaps
-    optical_system.Surface(optical_system, number=num, radius=1, thickness=thickness, material=None)
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 8))
 
-# Loop over each triplet to update the system and test the merit function
-for index, triplet in enumerate(triplets_data):
-    glass1, glass2, glass3, r1, r1_prime, r2, r2_prime, r3 = triplet
-    
-    # Update the surfaces with the actual triplet data
-    optical_system.surfaces[1].set_parameters(radius=r1, thickness=0.1, material=glass1)
-    optical_system.surfaces[2].set_parameters(radius=r1_prime, thickness=0)
-    optical_system.surfaces[3].set_parameters(radius=r2, thickness=0.1, material=glass2)
-    optical_system.surfaces[4].set_parameters(radius=r2_prime, thickness=0)
-    optical_system.surfaces[5].set_parameters(radius=r3, thickness=0.1, material=glass3)
-    optical_system.surfaces[6].set_parameters(radius=1e10, thickness=0)  # r3' is infinity
+# Extracting unique glass combinations for X-axis labels
+glass_combinations = df['Glass Combination'].unique()
 
-    optical_system.set_paraxial_image_distance()
+# Bar width
+bar_width = 0.35
 
-    # Make all thicknesses variable and optimize the system
-    optical_system.make_all_thicknesses_variable(last = False)
-    optical_system.make_all_radii_variable()
-    optical_system.optimize_system(efl=1, mxt=0.1) 
+# Positions of the bars on the X-axis
+r1 = range(len(glass_combinations))
+r2 = [x + bar_width for x in r1]
 
-    error_fct_value = optical_system.error_fct(efl=1)
+# Data for bar charts
+tabulated_merits = [df[df['Glass Combination'] == gc]['Tabulated Merit Function'].values[0] for gc in glass_combinations]
+optimized_merits = [df[df['Glass Combination'] == gc]['Optimized Merit Function'].min() for gc in glass_combinations]
 
-    # Save the system with a unique file path for each triplet
-    file_path = f"C:/CVUSER/triplet_system_{index+1}"  # Unique file path for each system
-    optical_system.save_system(file_path, seq=True)
+# Creating the bars
+plt.bar(r1, tabulated_merits, color='blue', width=bar_width, edgecolor='grey', label='Tabulated Merit Function')
+plt.bar(r2, optimized_merits, color='green', width=bar_width, edgecolor='grey', label='Optimized Merit Function (Best)')
 
-    # Print the error function value for the triplet
-    print(f"Triplet {index+1} Error Function: {error_fct_value}")
+# Adding names on the X-axis
+plt.xlabel('Glass Combination', fontweight='bold')
+plt.xticks([r + bar_width/2 for r in range(len(glass_combinations))], glass_combinations, rotation=45, ha="right")
 
-# Stop session after all triplets have been processed
-optical_system.stop_session()
+# Graph labels and title
+plt.ylabel('Merit Function Value')
+plt.title('Comparison of Tabulated and Optimized Merit Functions')
 
+# Create legend & Show graphic
+plt.legend()
 
-    
+plt.tight_layout()  # Adjust layout to not cut off labels
+plt.show()
