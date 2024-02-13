@@ -5,27 +5,18 @@ import pandas as pd
 # Load the dataset
 df = pd.read_csv('final_comparison_results.csv')
 
-# Display the first few rows to verify it's loaded correctly
-print(df.head())
-
 # Calculating improvement
 df['Improvement'] = ((df['Tabulated Merit Function'] - df['Optimized Merit Function']) / df['Tabulated Merit Function']) * 100
 
-# Finding the best starting point for each glass combination
-best_starting_points = df.loc[df.groupby('Glass Combination')['Optimized Merit Function'].idxmin()]
+# Identifying the best starting point for each glass combination
+best_starting_points_idx = df.groupby('Glass Combination')['Optimized Merit Function'].idxmin()
+df['Best Starting Point'] = False
+df.loc[best_starting_points_idx, 'Best Starting Point'] = True
 
-# Highlight the best starting point row
-def highlight_best(row, best):
-    if row.name in best.index:
-        return ['background-color: yellow']*len(row)
-    return ['']*len(row)
+# Convert to LaTeX code
+latex_code = df.to_latex(index=False, columns=['Glass Combination', 'Tabulated Merit Function', 'Optimized Merit Function', 'Improvement', 'Best Starting Point'], header=['Glass Combination', 'Tab. Merit Func.', 'Opt. Merit Func.', 'Improvement (%)', 'Best Start'], float_format="%.5f", longtable=True)
 
-styled_df = best_starting_points.style.apply(highlight_best, best=best_starting_points, axis=1)
-
-# Display or save the styled DataFrame
-styled_df.to_excel('optimized_results_highlighted.xlsx')  # Saving to an Excel file
-
-
+print(latex_code)
 
 
 
