@@ -1154,11 +1154,8 @@ class SystemSetup:
             sp_merit = self.sp_create_and_increase_thickness(sp, reference_surface, current_node.system_params['lens_thickness'], sp_filename, efl)
             self.update_all_surfaces_from_codev(debug=False)
 
-            if sp_merit is None:
+            if sp_merit is None or current_node.merit_function is None:
                 print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
-
-            if current_node.merit_function is None:
-                print(f"  Current Node Merit Function is None, skipping.")
 
             elif sp_merit>2*current_node.merit_function:
                 print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
