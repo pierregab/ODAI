@@ -1157,6 +1157,9 @@ class SystemSetup:
             if sp_merit is None:
                 print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
 
+            if current_node.merit_function is None:
+                print(f"  Current Node Merit Function is None, skipping.")
+
             elif sp_merit>2*current_node.merit_function:
                 print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
                 
