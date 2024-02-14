@@ -1183,17 +1183,11 @@ class SystemSetup:
                 system1_merit_function = self.error_fct(efl, constrained=False)
                 system1_efl = self.get_efl_from_codev()
 
-                # For System 1
-                if sp_merit is None :
-                    print(f"Optimized System 1 from Saddle Point {i+1} did not meet criteria, skipping.")
-                elif system1_merit_function is None or system1_merit_function > 2*sp_merit:
-                    print(f"Optimized System 1 from Saddle Point {i+1} did not meet criteria, skipping.")
-                else:
               
-                    system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
+                system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
                                               parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
-                    sp_node.add_child(system1_node)
-                    system_tree.add_node(system1_node)
+                sp_node.add_child(system1_node)
+                system_tree.add_node(system1_node)
 
                 # Restore original state and Optimize and Save System 2
                 self.load_system_parameters(system2_params)
@@ -1204,18 +1198,10 @@ class SystemSetup:
                 system2_merit_function = self.error_fct(efl, constrained=False)
                 system2_efl = self.get_efl_from_codev()
 
-                # Optimize and Save System 2, including merit function checks...
-                # For System 2
-                if sp_merit is None :
-                    print(f"Optimized System 2 from Saddle Point {i+1} did not meet criteria, skipping.")
-                elif system2_merit_function is None or system2_merit_function > 2*sp_merit:
-                    print(f"Optimized System 2 from Saddle Point {i+1} did not meet criteria, skipping.")
-                else:
-
-                    system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
+                system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
                                               parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
-                    sp_node.add_child(system2_node)
-                    system_tree.add_node(system2_node)
+                sp_node.add_child(system2_node)
+                system_tree.add_node(system2_node)
 
             # Restore the original optical system state after each saddle point iteration
             self.load_system_parameters(original_state)
