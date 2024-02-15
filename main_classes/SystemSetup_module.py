@@ -138,6 +138,10 @@ class SystemSetup:
         # Set entrance pupil diameter
         self.cv.Command(f"EPD {diameter}")
 
+      def set_fd(self, fd):
+        # Set focal distance
+        self.cv.Command(f"FNO {fd}")
+
       def set_dimensions(self, dimension_unit):
         # Set measurement unit (e.g., 'mm' or 'm')
         self.cv.Command(f"DIM {dimension_unit}")
@@ -283,21 +287,17 @@ class SystemSetup:
 
 
 
-      def optimize_system(self, efl, constrained = True, output_angle = True):
+      def optimize_system(self, efl, constrained = False, mxt = 1E10, mnt = 0):
         # Optimize the system
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
-        if not constrained:
-          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
-
-        last_surface_number = self.get_last_surface_number()
-
-        if output_angle:
-          self.cv.Command("UMX S" + str(last_surface_number) + "W1 Z1 < 10")
+        self.cv.Command('MXT' + str(mxt))
 
         if constrained:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
+
+        self.cv.Command("MNT" + str(mnt))
 
         self.cv.Command("MXC 100")
         self.cv.Command('MNC 25')
@@ -354,11 +354,13 @@ class SystemSetup:
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
         if not constrained:
-          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
+          self.cv.Command('MXT  1E10')
 
         if constrained:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
+          
+        self.cv.Command("MNT 0")
 
         self.cv.Command('MNC 0')
         self.cv.Command("MXC 0")
@@ -1162,20 +1164,28 @@ class SystemSetup:
             sp_merit = self.sp_create_and_increase_thickness(sp, reference_surface, current_node.system_params['lens_thickness'], sp_filename, efl)
             self.update_all_surfaces_from_codev(debug=False)
 
-            # Save the state after creating and increasing thickness
-            sp_state = self.save_system_parameters()
+            if sp_merit is None or current_node.merit_function is None:
+                print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
 
-            # Create a node for the saddle point and add it to the tree
-            sp_node = SystemNode(system_params=current_node.system_params, optical_system_state=sp_state, seq_file_path=sp_filename,
-                                  parent=current_node, merit_function=sp_merit, is_optimized=False, depth=depth+1)
-            current_node.add_child(sp_node)
-            system_tree.add_node(sp_node)
+            elif sp_merit>2*current_node.merit_function:
+                print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
+                
+            else:
 
-            # Surface numbers (list like 3,4 for ref 2)
-            surface_numbers = [reference_surface + 1, reference_surface + 2]
+                # Save the state after creating and increasing thickness
+                sp_state = self.save_system_parameters()
 
-            # Modify curvatures for two systems around the saddle point
-            system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, debug=False)
+                # Create a node for the saddle point and add it to the tree
+                sp_node = SystemNode(system_params=current_node.system_params, optical_system_state=sp_state, seq_file_path=sp_filename,
+                                      parent=current_node, merit_function=sp_merit, is_optimized=False, depth=depth+1)
+                current_node.add_child(sp_node)
+                system_tree.add_node(sp_node)
+
+                # Surface numbers (list like 3,4 for ref 2)
+                surface_numbers = [reference_surface + 1, reference_surface + 2]
+
+                # Modify curvatures for two systems around the saddle point
+                system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, debug=False)
 
             # Optimize and Save System 1
             self.load_system_parameters(system1_params)

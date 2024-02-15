@@ -4,11 +4,11 @@ from SystemNode_module import SystemNode, SystemTree
 class OpticalSystemManager:
     def __init__(self):
         # Default parameters
-        self.default_wavelengths = [486.1327, 546.074, 587.5618, 632.2, 657.2722]
-        self.default_entrance_pupil_diameter = 20
+        self.default_wavelengths = [486, 587, 656]
+        self.default_fd = 5
         self.default_dimensions = 'm'
-        self.default_fields = [(0, 3), (0, 6), (0,30)]
-        self.default_efl = 100
+        self.default_fields = [(0, 0.7)]
+        self.default_efl = 1
 
         # Root parameters
         self.epsilon = 0.5
@@ -37,7 +37,7 @@ class OpticalSystemManager:
 
         # Set default parameters
         self.optical_system.set_wavelengths(self.default_wavelengths)
-        self.optical_system.set_entrance_pupil_diameter(self.default_entrance_pupil_diameter)
+        self.optical_system.set_fd(self.default_fd)
         self.optical_system.set_dimensions(self.default_dimensions)
         self.optical_system.set_fields(self.default_fields)
 
@@ -100,8 +100,8 @@ class OpticalSystemManager:
 
 # Usage example
 optical_system_manager = OpticalSystemManager()
-optical_system_manager.set_initial_system_parameters(59.33336, 4, "NBK7_SCHOTT", -391.44174, 97.703035)
-optical_system_manager.set_root_parameters(0.5, [1, 2, 3, 4], [0], 4)
+optical_system_manager.set_initial_system_parameters(59.33336, 0.1, "NBK7_SCHOTT", -391.44174, 97.703035)
+optical_system_manager.set_root_parameters(1, [0.025, 0.050, 0.075, 0.10], [0], 0.1)
 optical_system_manager.start_system()
 optical_system_manager.evolve_and_optimize()
 optical_system_manager.end_system()
