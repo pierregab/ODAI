@@ -503,8 +503,6 @@ class SystemSetup:
         return saved_params
 
       def represent_spot_diameter(self):
-        print(self.rms)
-        print(self.spot)
         spot_diameter = [float(diameter[-1]) for diameter in self.spot]
         plt.plot([3, 6, 0], spot_diameter, 'ro')
         plt.xlabel('Field Height')
