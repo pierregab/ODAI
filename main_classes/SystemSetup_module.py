@@ -13,8 +13,6 @@ class SystemSetup:
           self.surfaces = {}   # dict to keep track of surfaces
           self.ref_mode = 'radius'  # Default mode is 'radius'
           self.saved_systems = {}  # dict to keep track of saved systems
-          self.rms = []
-          self.spot = []
 
       class Surface:
           def __init__(self, parent, number, radius, thickness, material=None):
@@ -490,9 +488,8 @@ class SystemSetup:
         """
         saved_params = {
             'mode': self.ref_mode,
-            'surfaces': {},
+            'surfaces': {}
         }
-
         for surface_num, surface in self.surfaces.items():
             saved_params['surfaces'][surface_num] = {
                 'radius': surface.radius,
@@ -503,15 +500,6 @@ class SystemSetup:
                 'thickness_variable': surface.thickness_variable
             }
         return saved_params
-
-      def represent_spot_diameter(self):
-        spot_diameter = [float(diameter[-1]) for diameter in self.spot]
-        plt.plot([3, 6, 0], spot_diameter, 'ro')
-        plt.xlabel('Field Height')
-        plt.ylabel('Spot Diameter')
-        plt.title('Spot Diameter vs Field Height')
-        plt.show()
-        
 
 
 
@@ -620,6 +608,7 @@ class SystemSetup:
       def get_spot_diagram(self, affichage = False):
 
         def extract_text(texte,mot_cle,bool):
+      # Utiliser une expression régulière pour trouver la première occurrence de 'Wavelength'
           if bool :
             pattern = re.compile(rf'{mot_cle}\s+\d+\.\d+')
           else:
@@ -627,10 +616,12 @@ class SystemSetup:
           match = pattern.search(texte)
 
           if match:
+            # Extraire le texte du début jusqu'à l'occurrence de 'Wavelength' (exclu)
             texte_avant_wavelength = texte[:match.start()].strip()
             texte = texte[match.start():]
             return(texte_avant_wavelength,texte)
           else:
+            # Si 'Wavelength' n'est pas trouvé, retourner le texte entier
             return ('Error: no match',texte)
 
 
@@ -656,33 +647,33 @@ class SystemSetup:
             for line in lines[1:]:
               numbers = number_pattern.findall(line)
               # Convert found strings to floats and pair them as (X, Y)
-              paired_numbers = [(float(numbers[i]), float(numbers[i+1])) for i in range(0, len(numbers) - 1, 2) if i+1 < len(numbers)]
+              paired_numbers = [(float(numbers[i]), float(numbers[i+1])) for i in range(0, len(numbers), 2)]
               data[wavelength].extend(paired_numbers)
 
           return data
         
         def extract_values(text):
           # Regular expression patterns for the required values
-            centroid_and_rms_diameter_patterns = re.compile(r'Displacement of centroid\s+Minimum RMS spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)\s+MM')
-            spot_center_and_spot_diameter_patterns = re.compile(r'Displacement of center of 100% Spot\s+Minimum 100% spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)')
+          centroid_and_rms_diameter_patterns = re.compile(r'Displacement of centroid\s+Minimum RMS spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)\s+MM')
+          spot_center_and_spot_diameter_patterns = re.compile(r'Displacement of center of 100% Spot\s+Minimum 100% spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)')
 
 
-            # Search for matches in the text
-            centroid_and_rms_diameter_matches = centroid_and_rms_diameter_patterns.search(text)
-            spot_center_and_spot_diameter_matches = spot_center_and_spot_diameter_patterns.search(text)
+          # Search for matches in the text
+          centroid_and_rms_diameter_matches = centroid_and_rms_diameter_patterns.search(text)
+          spot_center_and_spot_diameter_matches = spot_center_and_spot_diameter_patterns.search(text)
 
-            # Extract the values
-            centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
-            spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
+          # Extract the values
+          centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
+          spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
 
-            """
-            if len(self.rms) > 2:
-               print("Warning: RMS and spot diameter values already exist. Overwriting the previous values.")
-            """
-            
-            self.rms.append([centroid_x, centroid_y, rms_diameter])
-            self.spot.append([spot_center_x, spot_center_y, spot_diameter])
-          
+          return {
+              'centroid_x': centroid_x,
+              'centroid_y': centroid_y,
+              'rms_diameter': rms_diameter,
+              'spot_center_x': spot_center_x,
+              'spot_center_y': spot_center_y,
+              'spot_diameter': spot_diameter
+          }
 
 
         def plot_combined_data(data):
@@ -731,11 +722,7 @@ class SystemSetup:
           plot_combined_data(extracted_data[1])
           plot_combined_data(extracted_data[2])
 
-        for texts in text[0:3]:
-          extract_values(texts)
-
-        return extracted_data
-
+        extracted_values= [extract_values(texts) for texts in text[0:3]]
 
 
 
@@ -1190,33 +1177,34 @@ class SystemSetup:
                 # Modify curvatures for two systems around the saddle point
                 system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, debug=False)
 
-            # Optimize and Save System 1
-            self.load_system_parameters(system1_params)
-            system1_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptA.seq"
-            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
-                                                 , reference_surface, efl, system1_filename)
-            system1_state = self.save_system_parameters()
-            system1_merit_function = self.error_fct(efl, constrained=False)
-            system1_efl = self.get_efl_from_codev()
-            system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
-                                      parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
-            sp_node.add_child(system1_node)
-            system_tree.add_node(system1_node)
-            self.get_spot_diagram()
+                # Optimize and Save System 1
+                self.load_system_parameters(system1_params)
+                system1_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptA.seq"
+                self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
+                                                    , reference_surface, efl, system1_filename)
+                system1_state = self.save_system_parameters()
+                system1_merit_function = self.error_fct(efl, constrained=False)
+                system1_efl = self.get_efl_from_codev()
 
-            # Restore original state and Optimize and Save System 2
-            self.load_system_parameters(system2_params)
-            system2_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptB.seq"
-            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
-                                                 , reference_surface, efl, system2_filename)
-            system2_state = self.save_system_parameters()
-            system2_merit_function = self.error_fct(efl, constrained=False)
-            system2_efl = self.get_efl_from_codev()
-            system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
-                                       parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
-            sp_node.add_child(system2_node)
-            system_tree.add_node(system2_node)
-            self.get_spot_diagram()
+              
+                system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
+                                              parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
+                sp_node.add_child(system1_node)
+                system_tree.add_node(system1_node)
+
+                # Restore original state and Optimize and Save System 2
+                self.load_system_parameters(system2_params)
+                system2_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptB.seq"
+                self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
+                                                    , reference_surface, efl, system2_filename)
+                system2_state = self.save_system_parameters()
+                system2_merit_function = self.error_fct(efl, constrained=False)
+                system2_efl = self.get_efl_from_codev()
+
+                system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
+                                              parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
+                sp_node.add_child(system2_node)
+                system_tree.add_node(system2_node)
 
             # Restore the original optical system state after each saddle point iteration
             self.load_system_parameters(original_state)
@@ -1282,7 +1270,6 @@ class SystemSetup:
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
                 else:
                     print("No viable surfaces found")
-
 
             current_depth += 1
             print(f"Completed Depth {current_depth - 1}")
