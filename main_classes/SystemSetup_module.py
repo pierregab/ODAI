@@ -1280,6 +1280,11 @@ class SystemSetup:
                 else:
                     print("No viable surfaces found")
 
+
+            # Remove bad nodes from the tree
+            system_tree.keep_best_nodes(current_depth)
+            print(f"Removed bad nodes at depth {current_depth}")
+
             current_depth += 1
             print(f"Completed Depth {current_depth - 1}")
 
