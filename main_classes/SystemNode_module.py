@@ -365,3 +365,32 @@ class SystemTree:
         if not optimized_systems_data:
             print("No optimized systems available at the final depth.")
 
+
+    # Just keep the best nodes at a given depth
+        
+    def keep_best_nodes(self, depth, max_nodes=10):
+        """
+        Keep only the best nodes at a given depth and remove the rest, up to a maximum specified by max_nodes.
+        :param depth: The depth at which to keep the best nodes.
+        :param max_nodes: The maximum number of nodes to retain at the specified depth.
+        """
+        # Gather all nodes at the specified depth
+        nodes_at_depth = [node for node in self.all_nodes if node.depth == depth]
+
+        # Sort the nodes by their merit function in ascending order (assuming lower is better)
+        # If higher values are better, reverse the sort by setting reverse=True
+        nodes_at_depth.sort(key=lambda node: node.merit_function if node.merit_function is not None else float('inf'))
+
+        # Keep only the top max_nodes
+        best_nodes = nodes_at_depth[:max_nodes]
+
+        # Remove all other nodes from self.all_nodes
+        for node in nodes_at_depth:
+            if node not in best_nodes:
+                self.all_nodes.remove(node)
+                if node.parent:
+                    node.parent.children.remove(node)
+
+        # Optionally, you might want to handle the case where a node has been pruned but its children have not
+        # This would involve recursively removing all descendant nodes of any node that is pruned
+        # However, this functionality depends on your specific requirements and how you're using the tree
