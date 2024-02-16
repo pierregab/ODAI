@@ -1271,6 +1271,7 @@ class SystemSetup:
                 else:
                     print("No viable surfaces found")
 
+
             current_depth += 1
             print(f"Completed Depth {current_depth - 1}")
 
