@@ -674,10 +674,9 @@ class SystemSetup:
             # Extract the values
             centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
             spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
-            """
+
             if len(self.rms) > 2:
                print("Warning: RMS and spot diameter values already exist. Overwriting the previous values.")
-            """
             self.rms.append([centroid_x, centroid_y, rms_diameter])
             self.spot.append([spot_center_x, spot_center_y, spot_diameter])
           
@@ -1223,73 +1222,68 @@ class SystemSetup:
 
         
       
-      def evolve_optimized_systems(self, system_tree, starting_depth, target_depth, base_file_path, efl, debug=False):
-            print_evolution_header(starting_depth, target_depth)
+      def evolve_optimized_systems(self, system_tree, starting_depth, target_depth, base_file_path, efl, debug = False):
+        print_evolution_header(starting_depth, target_depth)
 
-            current_depth = starting_depth
+        current_depth = starting_depth
 
-            while current_depth <= target_depth:
-                print_subheader(f"Processing Depth {current_depth}")
-                optimized_nodes = system_tree.find_optimized_nodes_at_depth(current_depth)
-                print(f"Found {len(optimized_nodes)} optimized nodes at depth {current_depth}")
+        while current_depth <= target_depth:
+            print_subheader(f"Processing Depth {current_depth}")
+            optimized_nodes = system_tree.find_optimized_nodes_at_depth(current_depth)
+            print(f"Found {len(optimized_nodes)} optimized nodes at depth {current_depth}")
 
-                for i, node in enumerate(optimized_nodes):
-                    print(f"  Optimizing Node number {i+1} of {len(optimized_nodes)} (Seq File: {node.seq_file_path}) at Depth {current_depth}")
-                    
-                    if debug:
-                        # Print the state
-                        print("DEBUG: Printing the state")
-                        print(self.print_current_system())
+            for i, node in enumerate(optimized_nodes):
+                print(f"  Optimizing Node number {i+1} of {len(optimized_nodes)} (Seq File: {node.seq_file_path}) at Depth {current_depth}")
+                
+                if debug:
+                  # Print the state
+                  print("DEBUG: Printing the state")
+                  print(self.print_current_system())
 
-                    node_state = node.optical_system_state
-                    self.load_system_parameters(node_state)
-                    
-                    if debug:
-                        # Print the state
-                        print("DEBUG: Printing the state")
-                        print(self.print_current_system())
+                node_state = node.optical_system_state
+                self.load_system_parameters(node_state)
+                
+                if debug:
+                  # Print the state
+                  print("DEBUG: Printing the state")
+                  print(self.print_current_system())
 
-                    system_tree.print_tree()
+                system_tree.print_tree()
 
-                    # Perform SP detection and optimization for each optimized node
-                    viable_surfaces = self.identify_viable_surfaces()
-                    print(f"Viable surfaces for node: {viable_surfaces}")
-                    if viable_surfaces is not None:
-                        for surface in viable_surfaces:
-                            print("\n")
-                            print(f"    Optimizing at Surface {surface}")
+                # Perform SP detection and optimization for each optimized node
+                viable_surfaces = self.identify_viable_surfaces()
+                print(f"Viable surfaces for node: {viable_surfaces}")
+                if viable_surfaces is not None:
+                    for surface in viable_surfaces:
+                        print("\n")
+                        print(f"    Optimizing at Surface {surface}")
 
-                            if debug:
-                                # Print the state
-                                print("DEBUG: Printing the state")
-                                print(self.print_current_system())
+                        if debug:
+                          # Print the state
+                          print("DEBUG: Printing the state")
+                          print(self.print_current_system())
 
-                            self.load_system_parameters(node_state)
+                        self.load_system_parameters(node_state)
 
-                            if debug:
-                                # Print the state
-                                print("DEBUG: Printing the state")
-                                print(self.print_current_system())
+                        if debug:
+                          # Print the state
+                          print("DEBUG: Printing the state")
+                          print(self.print_current_system())
 
-                            # Print ref surface curvature
-                            ref_surface = self.get_surface(surface)
-                            ref_curvature = 1/ref_surface.radius
-                            print(f"Ref Surface Curvature: {ref_curvature}")
+                        # Print ref surface curvature
+                        ref_surface = self.get_surface(surface)
+                        ref_curvature = 1/ref_surface.radius
+                        print(f"Ref Surface Curvature: {ref_curvature}")
 
-                            self.add_null_surfaces(surface)
-                            self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
-                    else:
-                        print("No viable surfaces found")
+                        self.add_null_surfaces(surface)
+                        self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
+                else:
+                    print("No viable surfaces found")
 
-                # Prune the tree to keep only the top performing nodes before moving to the next depth
-                print(f"Pruning to keep top nodes before proceeding to depth {current_depth + 1}")
-                system_tree.keep_best_nodes(current_depth, max_nodes=10)
+            current_depth += 1
+            print(f"Completed Depth {current_depth - 1}")
 
-                current_depth += 1
-                print(f"Completed Depth {current_depth - 1}")
-
-            print_header("System Evolution Process Completed")
-
+        print_header("System Evolution Process Completed")
 
 
       def identify_viable_surfaces(self):
