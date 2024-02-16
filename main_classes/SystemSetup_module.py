@@ -675,8 +675,11 @@ class SystemSetup:
             centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
             spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
 
+            """
             if len(self.rms) > 2:
                print("Warning: RMS and spot diameter values already exist. Overwriting the previous values.")
+            """
+            
             self.rms.append([centroid_x, centroid_y, rms_diameter])
             self.spot.append([spot_center_x, spot_center_y, spot_diameter])
           
