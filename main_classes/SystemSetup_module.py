@@ -1271,6 +1271,8 @@ class SystemSetup:
                 else:
                     print("No viable surfaces found")
 
+            system_tree.keep_best_nodes(current_depth)
+
             current_depth += 1
             print(f"Completed Depth {current_depth - 1}")
 
