@@ -368,27 +368,31 @@ class SystemTree:
 
     # Just keep the best nodes at a given depth
         
+    def keep_best_nodes(self, depth, max_nodes=10):
+        """Keep only the best nodes at a given depth, based on their merit function."""
+        # Filter nodes at the given depth and sort them by their merit function
+        nodes_at_depth = [node for node in self.all_nodes if node.depth == depth]
+        nodes_at_depth.sort(key=lambda node: node.merit_function if node.merit_function is not None else float('inf'))
+
+        # Keep only the top nodes as specified by max_nodes
+        best_nodes = nodes_at_depth[:max_nodes]
+
+        # Remove nodes not in the best_nodes list
+        for node in nodes_at_depth:
+            if node not in best_nodes:
+                self.remove_node(node)  # Use the safe removal method
+
     def remove_node(self, node_to_remove):
         """Safely remove a node and its descendants from the tree."""
-        # Recursively remove all descendants of the node
-        for child in list(node_to_remove.children):  # Use list() to make a copy since we're modifying the list
-            self.remove_node(child)
-        
-        # Remove the node from its parent's children list
         if node_to_remove.parent:
-            node_to_remove.parent.children.remove(node_to_remove)
-        
-        # Finally, remove the node from the global all_nodes list
+            # Ensure the node is actually a child of its parent before removing
+            if node_to_remove in node_to_remove.parent.children:
+                node_to_remove.parent.children.remove(node_to_remove)
+
+        # Remove the node from the all_nodes list
         if node_to_remove in self.all_nodes:
             self.all_nodes.remove(node_to_remove)
 
-    def keep_best_nodes(self, depth, max_nodes=10):
-        """Implementation for keeping best nodes, now using remove_node for safe removal."""
-        nodes_at_depth = [node for node in self.all_nodes if node.depth == depth]
-        nodes_at_depth.sort(key=lambda node: node.merit_function if node.merit_function is not None else float('inf'))
-        best_nodes = nodes_at_depth[:max_nodes]
-
-        # Remove all other nodes
-        for node in nodes_at_depth:
-            if node not in best_nodes:
-                self.remove_node(node)  # Safely remove the node and its descendants
+        # Recursively remove all descendant nodes
+        for child in list(node_to_remove.children):  # Make a copy of the list to avoid modification issues
+            self.remove_node(child)
