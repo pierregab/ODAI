@@ -55,20 +55,21 @@ for index,doublet in enumerate(doublets_data):
     
     optical_system.set_paraxial_image_distance()
     optical_system.make_all_thicknesses_variable(last_one = False)
-    optical_system.optimize_system(efl=100, mxt=0.1) 
+    optical_system.make_all_radii_variable()
+    optical_system.optimize_system(efl=1, mxt=0.1) 
 
     # Save the system with a unique file path for each triplet
     file_path = f"C:/CVUSER/doublet_system_{index+1}"  # Unique file path for each system
     optical_system.save_system(file_path, seq=True)
 
     # Calculate the merit function
-    tabulated_merit = optical_system.error_fct(efl=100)
+    tabulated_merit = optical_system.error_fct(efl=1)
     tabulated_merit_functions.append((glass1, glass2,tabulated_merit))
 
 print(tabulated_merit_functions)
 
 comparison_results = []
-seq_file_paths = ["C:/CVUSER/FinalOptimized_Node15.seq", "C:/CVUSER/FinalOptimized_Node16.seq", "C:/CVUSER/FinalOptimized_Node12.seq", "C:/CVUSER/FinalOptimized_Node10.seq", "C:/CVUSER/FinalOptimized_Node9.seq"] 
+seq_file_paths = ["C:/CVUSER/FinalOptimized_Node4.seq"] 
 # Loop over each triplet material combination
 for doublet in doublets_data:
     glass1, glass2, r1, r2, r3, r4 = doublet
@@ -96,10 +97,10 @@ for doublet in doublets_data:
             optical_system.cv.Command(f"GC1 S{i} 100")
 
         # Perform optimization
-        optical_system.optimize_system(efl=100, mnt=0.02)  # Replace 'efl=1' with the desired effective focal length
+        optical_system.optimize_system(efl=1, mnt=0.02)  # Replace 'efl=1' with the desired effective focal length
         
         # Calculate the optimized merit function
-        optimized_merit = optical_system.error_fct(efl=100)
+        optimized_merit = optical_system.error_fct(efl=1)
         
         # Record the comparison
         comparison_results.append({
