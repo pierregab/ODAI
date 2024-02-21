@@ -404,16 +404,26 @@ class SystemTree:
         pos = {}  # Positions of nodes for visualization
         labels = {}  # Node labels showing merit function values
         node_colors = []  # Colors representing merit function values
+        level_widths = {}  # Track the width of each level to adjust positioning
 
-        # Recursive function to add nodes and edges
-        def add_nodes_and_edges(node, parent=None, depth=0, position=0):
+        # Initialize BFS
+        queue = [(self.root, None, 0, 0)]  # (node, parent, depth, position)
+        while queue:
+            node, parent, depth, position = queue.pop(0)
+
             # Add current node to the graph
             G.add_node(node.id)
             if parent:
                 G.add_edge(parent.id, node.id)  # Add edge from parent to current node
 
-            # Position nodes to visualize the tree structure
-            pos[node.id] = (-position, -depth)
+            # Calculate horizontal position
+            if depth not in level_widths:
+                level_widths[depth] = 0
+            else:
+                level_widths[depth] += 1
+            
+            # Position nodes to visualize the tree structure, avoiding overlaps
+            pos[node.id] = (level_widths[depth] * 1.5, -depth)
 
             # Prepare node label and color based on merit function
             merit_label = f'{node.id}\n{node.merit_function:.2f}' if node.merit_function else f'{node.id}\nNo merit'
@@ -421,15 +431,12 @@ class SystemTree:
             color = 'green' if node.merit_function and node.merit_function < 1.0 else 'red'  # Example color coding
             node_colors.append(color)
 
-            # Recursively add child nodes
+            # Add children to the queue
             for i, child in enumerate(node.children):
-                add_nodes_and_edges(child, node, depth + 1, position + i)
-
-        # Start recursion from the root
-        add_nodes_and_edges(self.root)
+                queue.append((child, node, depth + 1, i))
 
         # Draw the tree
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(20, 10))
         nx.draw(G, pos, labels=labels, with_labels=True, node_color=node_colors, node_size=3000, font_weight='bold', arrows=True)
         plt.title("Optimization Tree Visualization")
         plt.show()
