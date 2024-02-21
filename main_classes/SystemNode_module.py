@@ -6,6 +6,7 @@ import os
 import numpy as np
 from affichage import print_decorative_header, print_blank_line
 import re
+import networkx as nx
 
 class SystemNode:
   id_counter = 0  # Class-level counter for unique IDs
@@ -396,3 +397,40 @@ class SystemTree:
         # Recursively remove all descendant nodes
         for child in list(node_to_remove.children):  # Make a copy of the list to avoid modification issues
             self.remove_node(child)
+
+
+    def plot_optimization_tree(self):
+        G = nx.DiGraph()  # Create a directed graph to represent the tree
+        pos = {}  # Positions of nodes for visualization
+        labels = {}  # Node labels showing merit function values
+        node_colors = []  # Colors representing merit function values
+
+        # Recursive function to add nodes and edges
+        def add_nodes_and_edges(node, parent=None, depth=0, position=0):
+            # Add current node to the graph
+            G.add_node(node.id)
+            if parent:
+                G.add_edge(parent.id, node.id)  # Add edge from parent to current node
+
+            # Position nodes to visualize the tree structure
+            pos[node.id] = (-position, -depth)
+
+            # Prepare node label and color based on merit function
+            merit_label = f'{node.id}\n{node.merit_function:.2f}' if node.merit_function else f'{node.id}\nNo merit'
+            labels[node.id] = merit_label
+            color = 'green' if node.merit_function and node.merit_function < 1.0 else 'red'  # Example color coding
+            node_colors.append(color)
+
+            # Recursively add child nodes
+            for i, child in enumerate(node.children):
+                add_nodes_and_edges(child, node, depth + 1, position + i)
+
+        # Start recursion from the root
+        add_nodes_and_edges(self.root)
+
+        # Draw the tree
+        plt.figure(figsize=(12, 8))
+        nx.draw(G, pos, labels=labels, with_labels=True, node_color=node_colors, node_size=3000, font_weight='bold', arrows=True)
+        plt.title("Optimization Tree Visualization")
+        plt.show()
+

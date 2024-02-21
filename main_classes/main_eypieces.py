@@ -79,6 +79,7 @@ class OpticalSystemManager:
         self.system_tree.print_tree()
         self.system_tree.final_optimization(self.optical_system, self.default_efl, self.base_file_path)
         self.system_tree.print_final_optimized_systems_table()
+        self.system_tree.plot_optimization_tree()
 
     def end_system(self):
         self.optical_system.stop_session()
