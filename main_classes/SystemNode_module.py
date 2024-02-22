@@ -407,12 +407,15 @@ class SystemTree:
         node_colors_dict = {}
         level_widths = {}
 
-        max_depth = max(node.depth for node in self.all_nodes)
+        max_depth = max(node.depth for node in self.all_nodes)  # Find the max depth for scaling
 
+        # Function to adjust sizes and positions based on depth
+        # As depth increases, size factor decreases
         def size_and_depth_factor(depth):
-            # Invert the factor for sizing: larger depth gets a smaller size
-            return 1 / (depth + 1)
+            # Invert the depth factor to make the size smaller as depth increases
+            return max(1, (max_depth - depth + 1) / max_depth)
 
+        # Initialize BFS
         queue = [(self.root, None, 0, 0)]
         while queue:
             node, parent, depth, position = queue.pop(0)
@@ -425,7 +428,7 @@ class SystemTree:
             else:
                 level_widths[depth] += 1
 
-            x_position = level_widths[depth] * (1.5 * (max_depth - depth + 1))
+            x_position = level_widths[depth] * (1.5 * size_and_depth_factor(depth))
             pos[node.id] = (x_position, -np.sqrt(depth))
 
             merit_label = f'{node.id}\n{node.merit_function:.2f}' if node.merit_function else f'{node.id}\nNo merit'
@@ -434,8 +437,7 @@ class SystemTree:
             color_value = np.log1p(node.merit_function) if node.merit_function else 0
             node_colors_dict[node.id] = color_value
 
-            # Calculate node sizes inversely proportional to their depth
-            node_sizes.append(3000 * size_and_depth_factor(depth))
+            node_sizes.append(3000 * size_and_depth_factor(depth))  # Calculate size based on adjusted factor
 
             for i, child in enumerate(node.children):
                 queue.append((child, node, depth + 1, i))
@@ -446,12 +448,11 @@ class SystemTree:
 
         fig, ax = plt.subplots(figsize=(20, 10))
         nx.draw(G, pos, ax=ax, labels=labels, with_labels=True, node_color=color_values,
-                node_size=node_sizes, font_size=8 * (max_depth - depth + 1), cmap=cmap,
+                node_size=node_sizes, font_size=8 * size_and_depth_factor(depth), cmap=cmap,
                 arrows=True, edge_color='gray')
 
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(color_values), vmax=max(color_values)))
         sm.set_array([])
         cbar = fig.colorbar(sm, ax=ax, label='Log of Merit Function Value')
-
         ax.set_title("Optimization Tree Visualization")
         plt.show()
