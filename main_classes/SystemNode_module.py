@@ -400,14 +400,15 @@ class SystemTree:
 
 
     def plot_optimization_tree(self):
-        G = nx.DiGraph()
-        pos = {}
-        labels = {}
-        node_sizes = []
-        node_colors = []
-        level_widths = {}
+        G = nx.DiGraph()  # Create a directed graph to represent the tree
+        pos = {}  # Positions of nodes for visualization
+        labels = {}  # Node labels showing merit function values
+        node_sizes = []  # Sizes of nodes for visualization
+        node_colors_dict = {}  # Mapping node IDs to color values
+        level_widths = {}  # Track the width of each level to adjust positioning
 
         max_depth = max(node.depth for node in self.all_nodes)  # Find the max depth for scaling
+
         # Function to adjust sizes and positions based on depth
         def size_and_depth_factor(depth):
             return max(1, max_depth - depth + 1)
@@ -432,24 +433,28 @@ class SystemTree:
             merit_label = f'{node.id}\n{node.merit_function:.2f}' if node.merit_function else f'{node.id}\nNo merit'
             labels[node.id] = merit_label
 
-            # Node color and size based on merit function
-            color = np.log1p(node.merit_function) if node.merit_function else 0  # Using log scale for color
-            node_colors.append(color)
-            node_sizes.append(3000 / size_and_depth_factor(depth))  # Adjust node size based on depth
+            # Node color based on merit function using a logarithmic scale
+            color_value = np.log1p(node.merit_function) if node.merit_function else 0
+            node_colors_dict[node.id] = color_value
+
+            # Adjust node size based on depth
+            node_sizes.append(3000 / size_and_depth_factor(depth))
 
             for i, child in enumerate(node.children):
                 queue.append((child, node, depth + 1, i))
 
         # Use a color map
-        color_values = [node_colors[n] for n in G]
-        cmap = plt.cm.viridis  # You can change colormap to your preference
+        cmap = plt.cm.viridis  # You can change the colormap to your preference
+
+        # Generate a list of color values for nodes in the order they appear in G.nodes
+        color_values = [node_colors_dict[n] for n in G.nodes()]
 
         plt.figure(figsize=(20, 10))
         nx.draw(G, pos, labels=labels, with_labels=True, node_color=color_values, node_size=node_sizes,
                 font_size=8 * size_and_depth_factor(depth), cmap=cmap, arrows=True, edge_color='gray')
 
-        # Adding a colorbar to represent the merit function scale
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(node_colors), vmax=max(node_colors)))
+        # Adding a color bar to represent the merit function scale
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(color_values), vmax=max(color_values)))
         sm.set_array([])
         plt.colorbar(sm, label='Log of Merit Function Value')
 
