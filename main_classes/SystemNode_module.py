@@ -444,7 +444,7 @@ class SystemTree:
                 queue.append((child, node, depth + 1, i))
 
         # Use a color map
-        cmap = plt.cm.viridis  # You can change the colormap to your preference
+        cmap = plt.cm.rainbow  # You can change the colormap to your preference
 
         # Generate a list of color values for nodes in the order they appear in G.nodes
         color_values = [node_colors_dict[n] for n in G.nodes()]
