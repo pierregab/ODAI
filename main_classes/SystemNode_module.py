@@ -450,13 +450,14 @@ class SystemTree:
         color_values = [node_colors_dict[n] for n in G.nodes()]
 
         plt.figure(figsize=(20, 10))
+        ax = plt.gca()  # Get the current Axes instance on the current figure
         nx.draw(G, pos, labels=labels, with_labels=True, node_color=color_values, node_size=node_sizes,
                 font_size=8 * size_and_depth_factor(depth), cmap=cmap, arrows=True, edge_color='gray')
 
         # Adding a color bar to represent the merit function scale
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(color_values), vmax=max(color_values)))
         sm.set_array([])
-        plt.colorbar(sm, label='Log of Merit Function Value')
+        cbar = plt.colorbar(sm, ax=ax, label='Log of Merit Function Value')  # Provide the 'ax' argument
 
         plt.title("Optimization Tree Visualization")
         plt.show()
