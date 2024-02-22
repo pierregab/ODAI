@@ -400,20 +400,19 @@ class SystemTree:
 
 
     def plot_optimization_tree(self):
-        G = nx.DiGraph()  # Create a directed graph to represent the tree
-        pos = {}  # Positions of nodes for visualization
-        labels = {}  # Node labels showing merit function values
-        node_sizes = []  # Sizes of nodes for visualization
-        node_colors_dict = {}  # Mapping node IDs to color values
-        level_widths = {}  # Track the width of each level to adjust positioning
+        G = nx.DiGraph()
+        pos = {}
+        labels = {}
+        node_sizes = []
+        node_colors_dict = {}
+        level_widths = {}
 
-        max_depth = max(node.depth for node in self.all_nodes)  # Find the max depth for scaling
+        max_depth = max(node.depth for node in self.all_nodes)
 
-        # Function to adjust sizes and positions based on depth
         def size_and_depth_factor(depth):
-            return max(1, max_depth - depth + 1)
+            # Invert the factor for sizing: larger depth gets a smaller size
+            return 1 / (depth + 1)
 
-        # Initialize BFS
         queue = [(self.root, None, 0, 0)]
         while queue:
             node, parent, depth, position = queue.pop(0)
@@ -425,40 +424,34 @@ class SystemTree:
                 level_widths[depth] = 0
             else:
                 level_widths[depth] += 1
-            
-            # Dynamic position adjustment
-            x_position = level_widths[depth] * (1.5 * size_and_depth_factor(depth))
-            pos[node.id] = (x_position, -np.sqrt(depth))  # Adjust y-position using square root to manage density
+
+            x_position = level_widths[depth] * (1.5 * (max_depth - depth + 1))
+            pos[node.id] = (x_position, -np.sqrt(depth))
 
             merit_label = f'{node.id}\n{node.merit_function:.2f}' if node.merit_function else f'{node.id}\nNo merit'
             labels[node.id] = merit_label
 
-            # Node color based on merit function using a logarithmic scale
             color_value = np.log1p(node.merit_function) if node.merit_function else 0
             node_colors_dict[node.id] = color_value
 
-            # Adjust node size based on depth
-            node_sizes.append(3000 / size_and_depth_factor(depth))
+            # Calculate node sizes inversely proportional to their depth
+            node_sizes.append(3000 * size_and_depth_factor(depth))
 
             for i, child in enumerate(node.children):
                 queue.append((child, node, depth + 1, i))
 
-        # Use a color map
-        cmap = plt.cm.rainbow  # You can change the colormap to your preference
+        cmap = plt.cm.rainbow
 
-        # Generate a list of color values for nodes in the order they appear in G.nodes
         color_values = [node_colors_dict[n] for n in G.nodes()]
 
-        plt.figure(figsize=(20, 10))
-        ax = plt.gca()  # Get the current Axes instance on the current figure
-        nx.draw(G, pos, labels=labels, with_labels=True, node_color=color_values, node_size=node_sizes,
-                font_size=8 * size_and_depth_factor(depth), cmap=cmap, arrows=True, edge_color='gray')
+        fig, ax = plt.subplots(figsize=(20, 10))
+        nx.draw(G, pos, ax=ax, labels=labels, with_labels=True, node_color=color_values,
+                node_size=node_sizes, font_size=8 * (max_depth - depth + 1), cmap=cmap,
+                arrows=True, edge_color='gray')
 
-        # Adding a color bar to represent the merit function scale
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(color_values), vmax=max(color_values)))
         sm.set_array([])
-        cbar = plt.colorbar(sm, ax=ax, label='Log of Merit Function Value')  # Provide the 'ax' argument
+        cbar = fig.colorbar(sm, ax=ax, label='Log of Merit Function Value')
 
-        plt.title("Optimization Tree Visualization")
+        ax.set_title("Optimization Tree Visualization")
         plt.show()
-
