@@ -1186,11 +1186,15 @@ class SystemSetup:
                 system1_merit_function = self.error_fct(efl, constrained=False)
                 system1_efl = self.get_efl_from_codev()
 
-              
-                system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
-                                              parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
-                sp_node.add_child(system1_node)
-                system_tree.add_node(system1_node)
+                # The efl must be within 10% of the target efl
+                if abs(efl - system1_efl) / efl > 0.1:
+                    print(f"  System 1 EFL ({system1_efl}) is not within 10% of the target EFL ({efl}), skipping.")
+
+                else:
+                  system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
+                                                parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
+                  sp_node.add_child(system1_node)
+                  system_tree.add_node(system1_node)
 
                 # Restore original state and Optimize and Save System 2
                 self.load_system_parameters(system2_params)
@@ -1201,10 +1205,15 @@ class SystemSetup:
                 system2_merit_function = self.error_fct(efl, constrained=False)
                 system2_efl = self.get_efl_from_codev()
 
-                system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
-                                              parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
-                sp_node.add_child(system2_node)
-                system_tree.add_node(system2_node)
+                # The efl must be within 10% of the target efl
+                if abs(efl - system2_efl) / efl > 0.1:
+                    print(f"  System 2 EFL ({system2_efl}) is not within 10% of the target EFL ({efl}), skipping.")
+
+                else:
+                  system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
+                                                parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
+                  sp_node.add_child(system2_node)
+                  system_tree.add_node(system2_node)
 
             # Restore the original optical system state after each saddle point iteration
             self.load_system_parameters(original_state)
