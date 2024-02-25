@@ -344,6 +344,28 @@ class SystemTree:
         # Sort the systems by merit function, placing 'No merit function' at the end
         optimized_systems_data.sort(key=lambda x: float('inf') if x['Merit Function'] == "No merit function" else x['Merit Function'])
 
+        # Prepare to write to a text file
+        with open('optimized_systems_table.txt', 'w') as file:
+            # Print the table header
+            headers = ['Node ID', 'Parent ID', 'Merit Function', 'EFL', 'Children Count', 'SEQ File Path']
+            header_line = " | ".join("{:<15}".format(header) for header in headers)
+            file.write(header_line + '\n')
+            file.write("-" * len(header_line) + '\n')
+
+            # Print each row in the table
+            for system in optimized_systems_data:
+                row_data = [system[header] for header in headers]
+                row_data_formatted = " | ".join("{:<15}".format(str(data)) for data in row_data)
+                file.write(row_data_formatted + '\n')
+
+            # Check if there are no systems to display
+            if not optimized_systems_data:
+                file.write("No optimized systems available at the final depth.")
+
+
+        # Limit to the best 100 systems
+        optimized_systems_data = optimized_systems_data[:100]
+
         # Print the table header
         headers = ['Node ID', 'Parent ID', 'Merit Function', 'EFL', 'Children Count', 'SEQ File Path']
         header_line = " | ".join("{:<15}".format(header) for header in headers)
