@@ -267,6 +267,46 @@ if __name__ == "__main__":
     submit_button = ttk.Button(root, text="Submit", command=submit)
     submit_button.pack(pady=10)
 
+        # Default Wavelengths
+    default_wavelengths = [486.1327, 546.074, 587.5618, 632.2, 657.2722]
+    for wavelength in default_wavelengths:
+        add_wavelength_entry()
+        wavelength_entries[-1][1].insert(0, str(wavelength))
+
+    # Default Fields
+    default_fields = [(0, 3), (0, 6), (0, 35)]
+    for field in default_fields:
+        add_field_entry()
+        field_entries[-1][1].insert(0, str(field[0]))
+        field_entries[-1][2].insert(0, str(field[1]))
+
+    # EFL, fd, and other singular entries
+    efl_entry.insert(0, "100")
+    fd_entry.insert(0, "5")
+
+    # SP Parameters
+    epsilon_entry.insert(0, "0.5")
+    lens_thickness_entry.insert(0, "0.2")
+    air_distance_steps_entry.insert(0, "0")
+    base_material_entry.insert(0, "NBK7_SCHOTT")
+    
+    # Default Lens Thickness Steps
+    default_lens_thickness_steps = [0.05, 0.1, 0.15, 0.4]
+    for step in default_lens_thickness_steps:
+        add_lens_thickness_step_entry()
+        lens_thickness_steps_entries[-1][1].insert(0, str(step))
+
+    # Other defaults
+    target_depth_entry.insert(0, "2")
+    base_file_path_entry.insert(0, "0")
+
+    # Starting System Parameters
+    surface1_radius_entry.insert(0, "59.33336")
+    surface1_thickness_entry.insert(0, "0.2")
+    surface1_material_entry.insert(0, "NBK7_SCHOTT")
+    surface2_radius_entry.insert(0, "-391.44174")
+    surface2_thickness_entry.insert(0, "97.703035")
+
     redirect_logging()
     # Run the GUI
     root.mainloop()
