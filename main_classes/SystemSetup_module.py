@@ -735,7 +735,13 @@ class SystemSetup:
 
         return extracted_data
       
+      def get_mtf(self):
+        self.cv.Command("MTF; CAN;")
+        self.cv.Command("MTF")
+        self.cv.Command("GEO NO;")
 
+        info=self.cv.Command("GO")
+        print(info)
 
       ############## Methods for the saddle point ###############
 
@@ -1202,7 +1208,9 @@ class SystemSetup:
                                               parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
                 sp_node.add_child(system1_node)
                 system_tree.add_node(system1_node)
+                #self.get_mtf()
                 self.get_spot_diagram()
+
 
                 # Restore original state and Optimize and Save System 2
                 self.load_system_parameters(system2_params)
