@@ -136,6 +136,10 @@ class SystemSetup:
         # Set entrance pupil diameter
         self.cv.Command(f"EPD {diameter}")
 
+      def set_fd(self, fd):
+        # Set focal distance
+        self.cv.Command(f"FNO {fd}")
+
       def set_dimensions(self, dimension_unit):
         # Set measurement unit (e.g., 'mm' or 'm')
         self.cv.Command(f"DIM {dimension_unit}")
@@ -281,16 +285,17 @@ class SystemSetup:
 
 
 
-      def optimize_system(self, efl, constrained = True):
+      def optimize_system(self, efl, constrained = False, mxt = 1E10, mnt = 0):
         # Optimize the system
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
-        if not constrained:
-          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
+        self.cv.Command('MXT' + str(mxt))
 
         if constrained:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
+
+        self.cv.Command("MNT" + str(mnt))
 
         self.cv.Command("MXC 100")
         self.cv.Command('MNC 25')
@@ -347,11 +352,13 @@ class SystemSetup:
         self.cv.Command("AUT")
         self.cv.Command('DEL 0.15') # Ray grid interval
         if not constrained:
-          self.cv.Command('MXT  1E10; MNT  -1E10; MNE  -1E10; MNA  -1E10; MAE  -1E10')
+          self.cv.Command('MXT  1E10')
 
         if constrained:
           self.cv.Command("MNA 0")
           self.cv.Command("MAE 0")
+          
+        self.cv.Command("MNT 0")
 
         self.cv.Command('MNC 0')
         self.cv.Command("MXC 0")
@@ -419,10 +426,14 @@ class SystemSetup:
             self.get_surface(surface_num).make_thickness_fixed()
         print("All thicknesses have been fixed.")
 
-      def make_all_thicknesses_variable(self):
+      def make_all_thicknesses_variable(self, last_one = True):
         # Iterate over all surfaces and make their thickness variable
-        for surface_num in range(1, self.get_last_surface_number() + 1):
-            self.get_surface(surface_num).make_thickness_variable()
+        if last_one:
+          for surface_num in range(1, self.get_last_surface_number() + 1):
+              self.get_surface(surface_num).make_thickness_variable()
+        else:
+          for surface_num in range(1, self.get_last_surface_number()):
+              self.get_surface(surface_num).make_thickness_variable()
         print("All thicknesses have been made variable.")
 
       def make_all_radii_variable(self):
@@ -507,6 +518,9 @@ class SystemSetup:
                 self.surfaces[surface_num].delete_surface()
                 del self.surfaces[surface_num]
 
+        # Go in radius mode
+        self.switch_ref_mode('radius')
+
         # Load parameters for each surface in the saved parameters
         for surface_num, params in saved_params['surfaces'].items():
             # Create a new surface if it does not exist
@@ -539,6 +553,16 @@ class SystemSetup:
 
             except Exception as e:
                 print(f"Error updating surface {surface_num}: {e}")
+
+        # Compare the number of surfaces in CODE V and in Python
+        codev_surface_count = self.get_surface_count_from_codev()
+        python_surface_count = len(self.surfaces)
+
+        if codev_surface_count > python_surface_count:
+            # Delete the remaining surfaces in CODE V
+            for surface_num in range(python_surface_count , codev_surface_count + 1):
+                self.cv.Command(f"DEL S{surface_num}")
+
 
         # Compare and update thicknesses in CODE V
         codev_thicknesses = self.get_surface_thicknesses_from_codev()
@@ -580,6 +604,125 @@ class SystemSetup:
                 print(f"{label}{radius}{thickness:12}{material_str}{radius_variable:>8}{thickness_variable:>8}")
 
             print("-" * 30)  # Separator for better readability
+
+      def get_spot_diagram(self, affichage = False):
+
+        def extract_text(texte,mot_cle,bool):
+      # Utiliser une expression régulière pour trouver la première occurrence de 'Wavelength'
+          if bool :
+            pattern = re.compile(rf'{mot_cle}\s+\d+\.\d+')
+          else:
+            pattern = re.compile(rf'{mot_cle}')
+          match = pattern.search(texte)
+
+          if match:
+            # Extraire le texte du début jusqu'à l'occurrence de 'Wavelength' (exclu)
+            texte_avant_wavelength = texte[:match.start()].strip()
+            texte = texte[match.start():]
+            return(texte_avant_wavelength,texte)
+          else:
+            # Si 'Wavelength' n'est pas trouvé, retourner le texte entier
+            return ('Error: no match',texte)
+
+
+        def extract_data(text): # retourne un dictionnaire avec les données
+          # Split the text by 'Wavelength' to separate different sections
+          sections = text.split("Wavelength")
+
+          data = {}
+
+          # Regular expression to match numeric patterns
+          number_pattern = re.compile(r"-?\d+\.\d+")
+
+          for section in sections[1:]:  # Skip the first split part as it's before the first 'Wavelength'
+            lines = section.splitlines()
+          
+            # First line after 'Wavelength' contains the wavelength value
+            wavelength = float(lines[0].strip())
+          
+            # Initialize a list to hold X and Y pairs for this wavelength
+            data[wavelength] = []
+
+            # Iterate over the remaining lines to find numeric data
+            for line in lines[1:]:
+              numbers = number_pattern.findall(line)
+              # Convert found strings to floats and pair them as (X, Y)
+              paired_numbers = [(float(numbers[i]), float(numbers[i+1])) for i in range(0, len(numbers), 2)]
+              data[wavelength].extend(paired_numbers)
+
+          return data
+        
+        def extract_values(text):
+          # Regular expression patterns for the required values
+          centroid_and_rms_diameter_patterns = re.compile(r'Displacement of centroid\s+Minimum RMS spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)\s+MM')
+          spot_center_and_spot_diameter_patterns = re.compile(r'Displacement of center of 100% Spot\s+Minimum 100% spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)')
+
+
+          # Search for matches in the text
+          centroid_and_rms_diameter_matches = centroid_and_rms_diameter_patterns.search(text)
+          spot_center_and_spot_diameter_matches = spot_center_and_spot_diameter_patterns.search(text)
+
+          # Extract the values
+          centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
+          spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
+
+          return {
+              'centroid_x': centroid_x,
+              'centroid_y': centroid_y,
+              'rms_diameter': rms_diameter,
+              'spot_center_x': spot_center_x,
+              'spot_center_y': spot_center_y,
+              'spot_diameter': spot_diameter
+          }
+
+
+        def plot_combined_data(data):
+          plt.figure()
+
+          # Générer une palette de couleurs
+          colors = plt.cm.jet(np.linspace(0, 1, len(data)))
+
+          for (wavelength, points), color in zip(data.items(), colors):
+            x_values1, y_values = zip(*points)
+            x_values2 = [-x for x in x_values1] # Symmetric points for the other side of the axis not included in the data    
+            x_values = list(x_values1) + x_values2
+            y_values = y_values + y_values
+            plt.scatter(x_values, y_values, color=color, label=f"{wavelength} nm")
+
+          plt.title("Ray Coordinates for Different Wavelengths")
+          plt.xlabel("X (MM)")
+          plt.ylabel("Y (MM)")
+          plt.legend()
+          plt.grid(True)
+          plt.show()
+
+        self.cv.Command("SPO; CAN;")
+        self.cv.Command("SPO")
+        self.cv.Command("LIS YES;")
+            
+
+        info=self.cv.Command("GO")
+        
+        values_3_degrees,info = extract_text(info, 'Wavelength',True)
+        data_3_degrees,info = extract_text(info, "Ray",False)
+
+        values_6_degrees,info = extract_text(info, "Wavelength",True)
+        data_6_degrees,info = extract_text(info, "Ray",False)
+
+        values_0_degrees,info = extract_text(info, "Wavelength",True)
+        data_0_degrees,final_values = extract_text(info, "The",False)
+
+        text=[values_3_degrees,values_6_degrees,values_0_degrees,final_values]
+        data=[data_3_degrees,data_6_degrees,data_0_degrees]
+
+        extracted_data = [extract_data(datas) for datas in data]
+
+        if affichage :
+          plot_combined_data(extracted_data[0])
+          plot_combined_data(extracted_data[1])
+          plot_combined_data(extracted_data[2])
+
+        extracted_values= [extract_values(texts) for texts in text[0:3]]
 
 
 
@@ -912,8 +1055,12 @@ class SystemSetup:
             return np.std(window) < threshold  # using the same threshold as before
 
 
+        # FAUT UPDATE SUR CODEV !!!!!!
+
         # Define initial curvature based on the reference surface
         initial_curvature = 1 / self.get_surface(reference_surface_number).radius
+        # Print initial curvature
+        print(f"Initial Curvature: {initial_curvature}")
 
         # Arrays to store curvatures and corresponding MF values
         curvatures = np.linspace(initial_curvature - delta_curvature * num_points / 2, 
@@ -953,6 +1100,11 @@ class SystemSetup:
                 # Check if the zero point is smooth
                 if is_smooth_zero(derivatives, i):
                     zero_points.append(zero_point)
+
+        # If there is no zero point, return the starting point (same curvature)
+        if not zero_points:
+            zero_points.append(initial_curvature)
+            print("SP scan doesn't return result, returning the starting point.")
 
         if debug:
             print("debuging activated for perform_sp_scan, plotting the results")
@@ -1002,46 +1154,66 @@ class SystemSetup:
             sp_merit = self.sp_create_and_increase_thickness(sp, reference_surface, current_node.system_params['lens_thickness'], sp_filename, efl)
             self.update_all_surfaces_from_codev(debug=False)
 
-            # Save the state after creating and increasing thickness
-            sp_state = self.save_system_parameters()
+            if sp_merit is None or current_node.merit_function is None:
+                print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
 
-            # Create a node for the saddle point and add it to the tree
-            sp_node = SystemNode(system_params=current_node.system_params, optical_system_state=sp_state, seq_file_path=sp_filename,
-                                  parent=current_node, merit_function=sp_merit, is_optimized=False, depth=depth+1)
-            current_node.add_child(sp_node)
-            system_tree.add_node(sp_node)
+            elif sp_merit>2*current_node.merit_function:
+                print(f"  Saddle Point {i+1} did not meet criteria, skipping.")
+                
+            else:
 
-            # Surface numbers (list like 3,4 for ref 2)
-            surface_numbers = [reference_surface + 1, reference_surface + 2]
+                # Save the state after creating and increasing thickness
+                sp_state = self.save_system_parameters()
 
-            # Modify curvatures for two systems around the saddle point
-            system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, debug=False)
+                # Create a node for the saddle point and add it to the tree
+                sp_node = SystemNode(system_params=current_node.system_params, optical_system_state=sp_state, seq_file_path=sp_filename,
+                                      parent=current_node, merit_function=sp_merit, is_optimized=False, depth=depth+1)
+                current_node.add_child(sp_node)
+                system_tree.add_node(sp_node)
 
-            # Optimize and Save System 1
-            self.load_system_parameters(system1_params)
-            system1_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptA.seq"
-            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
-                                                 , reference_surface, efl, system1_filename)
-            system1_state = self.save_system_parameters()
-            system1_merit_function = self.error_fct(efl, constrained=False)
-            system1_efl = self.get_efl_from_codev()
-            system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
-                                      parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
-            sp_node.add_child(system1_node)
-            system_tree.add_node(system1_node)
+                # Surface numbers (list like 3,4 for ref 2)
+                surface_numbers = [reference_surface + 1, reference_surface + 2]
 
-            # Restore original state and Optimize and Save System 2
-            self.load_system_parameters(system2_params)
-            system2_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptB.seq"
-            self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
-                                                 , reference_surface, efl, system2_filename)
-            system2_state = self.save_system_parameters()
-            system2_merit_function = self.error_fct(efl, constrained=False)
-            system2_efl = self.get_efl_from_codev()
-            system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
-                                       parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
-            sp_node.add_child(system2_node)
-            system_tree.add_node(system2_node)
+                # Modify curvatures for two systems around the saddle point
+                system1_params, system2_params = self.modify_curvatures_for_saddle_point(surface_numbers, current_node.system_params['epsilon'], efl, debug=False)
+
+                # Optimize and Save System 1
+                self.load_system_parameters(system1_params)
+                system1_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptA.seq"
+                self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
+                                                    , reference_surface, efl, system1_filename)
+                system1_state = self.save_system_parameters()
+                system1_merit_function = self.error_fct(efl, constrained=False)
+                system1_efl = self.get_efl_from_codev()
+
+                # The efl must be within 10% of the target efl
+                if abs(efl - system1_efl) / efl > 0.1:
+                    print(f"  System 1 EFL ({system1_efl}) is not within 10% of the target EFL ({efl}), skipping.")
+
+                else:
+                  system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
+                                                parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
+                  sp_node.add_child(system1_node)
+                  system_tree.add_node(system1_node)
+
+                # Restore original state and Optimize and Save System 2
+                self.load_system_parameters(system2_params)
+                system2_filename = f"{base_file_path}/D{depth+1}_Node{sp_node.id}_SP{i+1}_OptB.seq"
+                self.increase_thickness_and_optimize(current_node.system_params['lens_thickness_steps'], current_node.system_params['air_distance_steps'], reference_surface+1
+                                                    , reference_surface, efl, system2_filename)
+                system2_state = self.save_system_parameters()
+                system2_merit_function = self.error_fct(efl, constrained=False)
+                system2_efl = self.get_efl_from_codev()
+
+                # The efl must be within 10% of the target efl
+                if abs(efl - system2_efl) / efl > 0.1:
+                    print(f"  System 2 EFL ({system2_efl}) is not within 10% of the target EFL ({efl}), skipping.")
+
+                else:
+                  system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
+                                                parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
+                  sp_node.add_child(system2_node)
+                  system_tree.add_node(system2_node)
 
             # Restore the original optical system state after each saddle point iteration
             self.load_system_parameters(original_state)
@@ -1098,10 +1270,17 @@ class SystemSetup:
                           print("DEBUG: Printing the state")
                           print(self.print_current_system())
 
+                        # Print ref surface curvature
+                        ref_surface = self.get_surface(surface)
+                        ref_curvature = 1/ref_surface.radius
+                        print(f"Ref Surface Curvature: {ref_curvature}")
+
                         self.add_null_surfaces(surface)
                         self.find_and_optimize_from_saddle_points(node, system_tree, efl, base_file_path, current_depth, surface)
                 else:
                     print("No viable surfaces found")
+
+            #system_tree.keep_best_nodes(current_depth)
 
             current_depth += 1
             print(f"Completed Depth {current_depth - 1}")

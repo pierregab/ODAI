@@ -6,6 +6,7 @@ import os
 import numpy as np
 from affichage import print_decorative_header, print_blank_line
 import re
+import networkx as nx
 
 class SystemNode:
   id_counter = 0  # Class-level counter for unique IDs
@@ -266,16 +267,25 @@ class SystemTree:
         for i, node in enumerate(final_depth_nodes):
             print(f"Optimizing Node {i+1}/{len(final_depth_nodes)} at Final Depth {final_depth}")
 
-            # Load the state of the node into SystemSetup
-            system_setup.load_system_parameters(node.optical_system_state)
+            # Load the state of the node using the specified command format
+            if node.seq_file_path:
+                load_command = f'run"{node.seq_file_path}";GO'
+                system_setup.cv.Command(load_command)
+            else:
+                print(f"No SEQ file path provided for Node {node.id}, skipping load.")
 
             # Make all radii, thicknesses, and applicable materials variable for optimization
-            system_setup.make_all_thicknesses_variable()
+            system_setup.make_all_thicknesses_variable(last_one = False)
             system_setup.make_all_radii_variable()
             system_setup.make_all_materials_variable()
 
             # Perform optimization
-            system_setup.optimize_system(efl, constrained=True)
+            system_setup.cv.Command('AUT')
+            system_setup.cv.Command('IMP 1E-10')
+            system_setup.cv.Command("EFL Z1 = " + str(efl)) # Condition on the EFL
+            system_setup.cv.Command('MNT 0.2')
+            system_setup.cv.Command("GLA SO..I  NFK5 NSK16 NLAF2 SF4")
+            system_setup.cv.Command("GO")
 
             # Update and save the optimized state
             system_setup.update_all_surfaces_from_codev()
@@ -284,6 +294,7 @@ class SystemTree:
             # Update the node's state and merit function
             node.optical_system_state = optimized_state
             node.merit_function = system_setup.error_fct(efl, constrained=False)
+            node.efl = system_setup.get_efl_from_codev()
 
             # Save the optimized system
             optimized_file_path = f"{base_file_path}/FinalOptimized_Node{node.id}.seq"
@@ -292,6 +303,7 @@ class SystemTree:
 
             # Print the merit function of the optimized system
             print(f"Node {node.id} Optimized: Merit Function: {node.merit_function}, Saved at: {optimized_file_path}")
+
 
     def find_final_depth(self):
         """
@@ -308,7 +320,8 @@ class SystemTree:
     def print_final_optimized_systems_table(self):
         """
         Print a fancy table of all final optimized systems, sorted by their merit function values.
-        Includes additional interesting data for analysis.
+        Includes additional interesting data for analysis. Handles cases where the merit function is
+        'No merit function' and sorts accordingly.
         """
         final_depth = self.find_final_depth()
         final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
@@ -318,17 +331,40 @@ class SystemTree:
         for node in final_depth_nodes:
             parent_id = node.parent.id if node.parent else 'Root'
             num_children = len(node.children)
+            merit_function = node.merit_function if isinstance(node.merit_function, float) else float('inf')  # Assign a high value for sorting
             optimized_systems_data.append({
                 'Node ID': node.id,
                 'Parent ID': parent_id,
-                'Merit Function': node.merit_function,
+                'Merit Function': merit_function if merit_function != float('inf') else "No merit function",
                 'EFL': node.efl,
                 'Children Count': num_children,
                 'SEQ File Path': node.seq_file_path
             })
 
-        # Sort the systems by merit function
-        optimized_systems_data.sort(key=lambda x: x['Merit Function'])
+        # Sort the systems by merit function, placing 'No merit function' at the end
+        optimized_systems_data.sort(key=lambda x: float('inf') if x['Merit Function'] == "No merit function" else x['Merit Function'])
+
+        # Prepare to write to a text file
+        with open('optimized_systems_table.txt', 'w') as file:
+            # Print the table header
+            headers = ['Node ID', 'Parent ID', 'Merit Function', 'EFL', 'Children Count', 'SEQ File Path']
+            header_line = " | ".join("{:<15}".format(header) for header in headers)
+            file.write(header_line + '\n')
+            file.write("-" * len(header_line) + '\n')
+
+            # Print each row in the table
+            for system in optimized_systems_data:
+                row_data = [system[header] for header in headers]
+                row_data_formatted = " | ".join("{:<15}".format(str(data)) for data in row_data)
+                file.write(row_data_formatted + '\n')
+
+            # Check if there are no systems to display
+            if not optimized_systems_data:
+                file.write("No optimized systems available at the final depth.")
+
+
+        # Limit to the best 100 systems
+        optimized_systems_data = optimized_systems_data[:100]
 
         # Print the table header
         headers = ['Node ID', 'Parent ID', 'Merit Function', 'EFL', 'Children Count', 'SEQ File Path']
@@ -339,8 +375,106 @@ class SystemTree:
         # Print each row in the table
         for system in optimized_systems_data:
             row_data = [system[header] for header in headers]
-            print(" | ".join("{:<15}".format(data) for data in row_data))
+            row_data_formatted = []
+            for data in row_data:
+                # Format 'Merit Function' specifically to handle 'No merit function' text properly
+                if headers == 'Merit Function' and data == "No merit function":
+                    row_data_formatted.append("{:<15}".format(data))
+                else:
+                    row_data_formatted.append("{:<15}".format(str(data)))
+            print(" | ".join(row_data_formatted))
 
         # Check if there are no systems to display
         if not optimized_systems_data:
             print("No optimized systems available at the final depth.")
+
+
+    # Just keep the best nodes at a given depth
+        
+    def keep_best_nodes(self, depth, max_nodes=10):
+        """Keep only the best nodes at a given depth, based on their merit function."""
+        # Filter nodes at the given depth and sort them by their merit function
+        nodes_at_depth = [node for node in self.all_nodes if node.depth == depth]
+        nodes_at_depth.sort(key=lambda node: node.merit_function if node.merit_function is not None else float('inf'))
+
+        # Keep only the top nodes as specified by max_nodes
+        best_nodes = nodes_at_depth[:max_nodes]
+
+        # Remove nodes not in the best_nodes list
+        for node in nodes_at_depth:
+            if node not in best_nodes:
+                self.remove_node(node)  # Use the safe removal method
+
+    def remove_node(self, node_to_remove):
+        """Safely remove a node and its descendants from the tree."""
+        if node_to_remove.parent:
+            # Ensure the node is actually a child of its parent before removing
+            if node_to_remove in node_to_remove.parent.children:
+                node_to_remove.parent.children.remove(node_to_remove)
+
+        # Remove the node from the all_nodes list
+        if node_to_remove in self.all_nodes:
+            self.all_nodes.remove(node_to_remove)
+
+        # Recursively remove all descendant nodes
+        for child in list(node_to_remove.children):  # Make a copy of the list to avoid modification issues
+            self.remove_node(child)
+
+
+    def plot_optimization_tree(self):
+        G = nx.DiGraph()
+        pos = {}
+        labels = {}
+        node_sizes = []
+        node_colors_dict = {}
+        level_widths = {}
+
+        max_depth = max(node.depth for node in self.all_nodes)  # Find the max depth for scaling
+
+        # Function to adjust sizes and positions based on depth
+        # As depth increases, size factor decreases
+        def size_and_depth_factor(depth):
+            # Invert the depth factor to make the size smaller as depth increases
+            return max(1, (max_depth - depth + 1) / max_depth)
+
+        # Initialize BFS
+        queue = [(self.root, None, 0, 0)]
+        while queue:
+            node, parent, depth, position = queue.pop(0)
+            G.add_node(node.id)
+            if parent:
+                G.add_edge(parent.id, node.id)
+
+            if depth not in level_widths:
+                level_widths[depth] = 0
+            else:
+                level_widths[depth] += 1
+
+            x_position = level_widths[depth] * (1.5 * size_and_depth_factor(depth))
+            pos[node.id] = (x_position, -np.sqrt(depth))
+
+            merit_label = f'{node.id}\n{node.merit_function:.2f}' if node.merit_function else f'{node.id}\nNo merit'
+            labels[node.id] = merit_label
+
+            color_value = np.log1p(node.merit_function) if node.merit_function else 0
+            node_colors_dict[node.id] = color_value
+
+            node_sizes.append(3000 * size_and_depth_factor(depth))  # Calculate size based on adjusted factor
+
+            for i, child in enumerate(node.children):
+                queue.append((child, node, depth + 1, i))
+
+        cmap = plt.cm.rainbow
+
+        color_values = [node_colors_dict[n] for n in G.nodes()]
+
+        fig, ax = plt.subplots(figsize=(20, 10))
+        nx.draw(G, pos, ax=ax, labels=labels, with_labels=True, node_color=color_values,
+                node_size=node_sizes, font_size=8 * size_and_depth_factor(depth), cmap=cmap,
+                arrows=True, edge_color='gray')
+
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(color_values), vmax=max(color_values)))
+        sm.set_array([])
+        cbar = fig.colorbar(sm, ax=ax, label='Log of Merit Function Value')
+        ax.set_title("Optimization Tree Visualization")
+        plt.show()
