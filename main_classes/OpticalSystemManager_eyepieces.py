@@ -99,7 +99,7 @@ class OpticalSystemManager_eyepieces:
         self.lens_thickness_steps = lens_thickness_steps
         self.air_distance_steps = air_distance_steps
         self.lens_thickness = lens_thickness
-    
+   
     def update_parameters_from_ui(self, data):
         # Mise à jour des paramètres à partir de l'interface utilisateur
         self.set_initial_system_parameters(
@@ -117,4 +117,6 @@ class OpticalSystemManager_eyepieces:
         )
         self.default_efl = data["efl"]
         self.default_fd = data["fd"]
+        self.target_depth = data["target_depth"]
+        self.starting_depth = data["starting_depth"]
 # Usage example

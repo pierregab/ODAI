@@ -24,7 +24,7 @@ class OpticalSystemManager:
         self.surface2_thickness = 97.703035
 
         self.base_file_path = "C:/CVUSER"
-        self.target_depth = 2
+        self.target_depth = 4
         self.starting_depth = 0
 
         # Initialize optical system
