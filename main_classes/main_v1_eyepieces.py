@@ -66,8 +66,8 @@ def add_lens_thickness_step_entry():
 
 # Function to submit the data and setup the optical system
 def submit():
-    global data_from_ui
     try:
+        # Construction du dictionnaire de données à partir de l'interface utilisateur
         data = {
             "wavelengths": [float(entry[1].get()) for entry in wavelength_entries],
             "fields": [(float(entry[1].get()), float(entry[2].get())) for entry in field_entries],
@@ -78,6 +78,7 @@ def submit():
             "lens_thickness": float(lens_thickness_entry.get()),
             "base_material": base_material_entry.get(),
             "target_depth": int(target_depth_entry.get()),
+            "starting_depth": int(starting_depth_entry.get()),
             "base_file_path": base_file_path_entry.get(),
             "fd": float(fd_entry.get()),
             "starting_system": {
@@ -92,27 +93,26 @@ def submit():
                 }
             }
         }
-        data_from_ui = data
+        start_optimization_thread(data)  # Passe directement les données au thread d'optimisation
     except ValueError as e:
         print(f"Error in input data: {e}")
-        return
-    
-   # Lancement des opérations de l'optical system manager dans un nouveau thread
+
+def start_optimization_thread(data):
     def manage_optical_system():
         pythoncom.CoInitialize()  # Initialise COM pour ce thread
         try:
-            if data_from_ui:
-                optical_system_manager = OpticalSystemManager_eyepieces()
-                optical_system_manager.update_parameters_from_ui(data_from_ui)
-                optical_system_manager.start_system()
-                optical_system_manager.evolve_and_optimize()
-                optical_system_manager.end_system()
-                print("Session CodeV terminée.")
+            optical_system_manager = OpticalSystemManager_eyepieces()
+            optical_system_manager.update_parameters_from_ui(data)  # Met à jour les paramètres avec les données de l'UI
+            optical_system_manager.start_system()
+            optical_system_manager.evolve_and_optimize()
+            optical_system_manager.end_system()
+            print("Session CodeV terminée.")
         except Exception as e:
             print(f"Une erreur est survenue : {e}")
         finally:
-            pythoncom.CoUninitialize()  # Uninitialize COM pour ce thread
-    
+            pythoncom.CoUninitialize()  # Désinitialise COM pour ce thread
+
+   
     # Création et démarrage du thread
     thread = threading.Thread(target=manage_optical_system)
     thread.start()
@@ -216,6 +216,10 @@ if __name__ == "__main__":
     tree_frame = ttk.LabelFrame(tab_tree, text="Tree")
     tree_frame.pack(expand=True, fill="both", padx=10, pady=10)
 
+    ttk.Label(tree_frame, text="Starting Depth").pack()
+    starting_depth_entry = ttk.Entry(tree_frame)
+    starting_depth_entry.pack()
+   
     ttk.Label(tree_frame, text="Target Depth").pack()
     target_depth_entry = ttk.Entry(tree_frame)
     target_depth_entry.pack()
@@ -266,6 +270,48 @@ if __name__ == "__main__":
     # Submit button
     submit_button = ttk.Button(root, text="Submit", command=submit)
     submit_button.pack(pady=10)
+
+        # Default Wavelengths
+    default_wavelengths = [486.1327, 546.074, 587.5618, 632.2, 657.2722]
+    for wavelength in default_wavelengths:
+        add_wavelength_entry()
+        wavelength_entries[-1][1].insert(0, str(wavelength))
+
+    # Default Fields
+    default_fields = [(0, 3), (0, 6), (0, 35)]
+    for field in default_fields:
+        add_field_entry()
+        field_entries[-1][1].insert(0, str(field[0]))
+        field_entries[-1][2].insert(0, str(field[1]))
+
+    # EFL, fd, and other singular entries
+    efl_entry.insert(0, "100")
+    fd_entry.insert(0, "5")
+
+    # SP Parameters
+    epsilon_entry.insert(0, "0.5")
+    lens_thickness_entry.insert(0, "0.2")
+    air_distance_steps_entry.insert(0, "0")
+    base_material_entry.insert(0, "NBK7_SCHOTT")
+    
+    # Default Lens Thickness Steps
+    default_lens_thickness_steps = [0.05, 0.1, 0.15, 0.4]
+    for step in default_lens_thickness_steps:
+        add_lens_thickness_step_entry()
+        lens_thickness_steps_entries[-1][1].insert(0, str(step))
+
+    # Other defaults
+    starting_depth_entry.insert(0, "0")
+    target_depth_entry.insert(0, "1")
+    base_file_path_entry.insert(0, "C:/CVUSER")
+    
+
+    # Starting System Parameters
+    surface1_radius_entry.insert(0, "59.33336")
+    surface1_thickness_entry.insert(0, "0.2")
+    surface1_material_entry.insert(0, "NBK7_SCHOTT")
+    surface2_radius_entry.insert(0, "-391.44174")
+    surface2_thickness_entry.insert(0, "97.703035")
 
     redirect_logging()
     # Run the GUI
