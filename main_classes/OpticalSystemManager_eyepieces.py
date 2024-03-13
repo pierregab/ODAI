@@ -1,30 +1,30 @@
 from SystemSetup_module import SystemSetup
 from SystemNode_module import SystemNode, SystemTree
 
-class OpticalSystemManager:
+class OpticalSystemManager_eyepieces:
     def __init__(self):
         # Default parameters
         self.default_wavelengths = [486.1327, 546.074, 587.5618, 632.2, 657.2722]
         self.default_fd = 5
         self.default_dimensions = 'm'
-        self.default_fields = [(0, 3), (0, 6), (0, 35)]
-        self.default_efl = 1
+        self.default_fields = [(0, 3), (0, 6), (0,35)]
+        self.default_efl = 100
 
         # Root parameters
-        self.epsilon = 1
+        self.epsilon = 0.5
         self.lens_thickness_steps = [0.05, 0.1, 0.15, 0.4]
         self.air_distance_steps = [0]
         self.lens_thickness = 0.2
-
+        
         # Initial system parameters
         self.surface1_radius = 59.33336
         self.surface1_thickness = 0.2
         self.surface1_material = "NBK7_SCHOTT"
         self.surface2_radius = -391.44174
         self.surface2_thickness = 97.703035
-
+        
         self.base_file_path = "C:/CVUSER"
-        self.target_depth = 4
+        self.target_depth = 2
         self.starting_depth = 0
 
         # Initialize optical system
@@ -81,6 +81,7 @@ class OpticalSystemManager:
         self.system_tree.print_final_optimized_systems_table()
         self.system_tree.plot_optimization_tree()
 
+
     def end_system(self):
         self.optical_system.stop_session()
 
@@ -98,11 +99,24 @@ class OpticalSystemManager:
         self.lens_thickness_steps = lens_thickness_steps
         self.air_distance_steps = air_distance_steps
         self.lens_thickness = lens_thickness
-
+   
+    def update_parameters_from_ui(self, data):
+        # Mise à jour des paramètres à partir de l'interface utilisateur
+        self.set_initial_system_parameters(
+            surface1_radius=data["starting_system"]["surface1"]["radius"],
+            surface1_thickness=data["starting_system"]["surface1"]["lens_thickness"],
+            surface1_material=data["starting_system"]["surface1"]["material"],
+            surface2_radius=data["starting_system"]["surface2"]["radius"],
+            surface2_thickness=data["starting_system"]["surface2"]["lens_thickness"]
+        )
+        self.set_root_parameters(
+            epsilon=data["epsilon"],
+            lens_thickness_steps=data["lens_thickness_steps"],
+            air_distance_steps=data["air_distance_steps"],
+            lens_thickness=data["lens_thickness"]
+        )
+        self.default_efl = data["efl"]
+        self.default_fd = data["fd"]
+        self.target_depth = data["target_depth"]
+        self.starting_depth = data["starting_depth"]
 # Usage example
-optical_system_manager = OpticalSystemManager()
-optical_system_manager.set_initial_system_parameters(59.33336, 0.2, "NBK7_SCHOTT", -391.44174, 97.703035)
-optical_system_manager.set_root_parameters(1, [0.05, 0.1, 0.15, 0.2], [0], 0.2)
-optical_system_manager.start_system()
-optical_system_manager.evolve_and_optimize()
-optical_system_manager.end_system()
