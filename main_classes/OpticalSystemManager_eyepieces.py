@@ -8,7 +8,7 @@ class OpticalSystemManager_eyepieces:
         self.default_fd = 5
         self.default_dimensions = 'm'
         self.default_fields = [(0, 3), (0, 6), (0,35)]
-        self.default_efl = 100
+        self.default_efl = 1
 
         # Root parameters
         self.epsilon = 0.5
@@ -80,6 +80,11 @@ class OpticalSystemManager_eyepieces:
         self.system_tree.final_optimization(self.optical_system, self.default_efl, self.base_file_path)
         self.system_tree.print_final_optimized_systems_table()
         self.system_tree.plot_optimization_tree()
+        # Récupère les données des systèmes optimisés pour affichage dans l'interface utilisateur
+        final_data = self.system_tree.get_final_optimized_systems_data()
+
+        # Retourne les données pour utilisation ultérieure, par exemple pour l'affichage dans l'UI
+        return final_data
 
 
     def end_system(self):
@@ -119,4 +124,10 @@ class OpticalSystemManager_eyepieces:
         self.default_fd = data["fd"]
         self.target_depth = data["target_depth"]
         self.starting_depth = data["starting_depth"]
-# Usage example
+    
+
+    
+ 
+
+
+

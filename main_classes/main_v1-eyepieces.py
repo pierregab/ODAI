@@ -104,18 +104,26 @@ def start_optimization_thread(data):
             optical_system_manager = OpticalSystemManager_eyepieces()
             optical_system_manager.update_parameters_from_ui(data)  # Met à jour les paramètres avec les données de l'UI
             optical_system_manager.start_system()
-            optical_system_manager.evolve_and_optimize()
+            final_data=optical_system_manager.evolve_and_optimize()
             optical_system_manager.end_system()
             print("Session CodeV terminée.")
+            # Utilise `root.after` pour planifier l'affichage des données dans l'UI sur le thread principal
+            root.after(0, lambda: display_final_data_in_ui(final_data))
         except Exception as e:
             print(f"Une erreur est survenue : {e}")
         finally:
             pythoncom.CoUninitialize()  # Désinitialise COM pour ce thread
-
+    def display_final_data_in_ui(final_data):
+        for system_data in final_data:
+            tree.insert("", "end", values=(
+                system_data['Node ID'], system_data['Parent ID'], system_data['Merit Function'],
+                system_data['EFL'], system_data['SEQ File Path']
+            ))
    
     # Création et démarrage du thread
     thread = threading.Thread(target=manage_optical_system)
     thread.start()
+
 
 # Initialize PrintLogger and redirect stdout
 def redirect_logging():
@@ -143,12 +151,14 @@ if __name__ == "__main__":
     tab_tree = ttk.Frame(tab_control)
     tab_starting_system = ttk.Frame(tab_control)
     tab_console_output = ttk.Frame(tab_control)
+    tab_output=ttk.Frame(tab_control)
     
     tab_control.add(tab_environment, text='Environment')
     tab_control.add(tab_sp, text='SP Parameters')
     tab_control.add(tab_tree, text='Tree')
     tab_control.add(tab_starting_system, text='Starting System')
     tab_control.add(tab_console_output, text='Console Output')
+    tab_control.add(tab_output,text='Output')
     tab_control.pack(expand=1, fill="both")
 
     # Environment tab
@@ -266,6 +276,22 @@ if __name__ == "__main__":
 
     console_text = scrolledtext.ScrolledText(console_output_frame, wrap=tk.WORD, width=40, height=10)
     console_text.pack(expand=True, fill="both")
+    
+    # Output tab
+    output_frame = ttk.LabelFrame(tab_output, text="Optimization Results")
+    output_frame.pack(expand=True, fill="both", padx=10, pady=10)
+
+    # Create a Treeview widget for tab_output
+    tree = ttk.Treeview(output_frame)
+    tree["columns"] = ("Node ID", "Parent ID", "Merit Function", "EFL", "SEQ File Path")
+    tree.configure(show='headings')
+    for col in tree["columns"]:
+        tree.heading(col, text=col)
+        tree.column(col, width=120, anchor="center")
+       
+
+    tree.pack(expand=True, fill="both")
+
 
     # Submit button
     submit_button = ttk.Button(root, text="Submit", command=submit)
@@ -285,7 +311,7 @@ if __name__ == "__main__":
         field_entries[-1][2].insert(0, str(field[1]))
 
     # EFL, fd, and other singular entries
-    efl_entry.insert(0, "100")
+    efl_entry.insert(0, "1")
     fd_entry.insert(0, "5")
 
     # SP Parameters

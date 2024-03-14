@@ -264,6 +264,8 @@ class SystemTree:
         # Find all optimized nodes at the final depth
         final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
 
+        self.plot_best_merit_function_evolution()
+
         for i, node in enumerate(final_depth_nodes):
             print(f"Optimizing Node {i+1}/{len(final_depth_nodes)} at Final Depth {final_depth}")
 
@@ -389,6 +391,38 @@ class SystemTree:
             print("No optimized systems available at the final depth.")
 
 
+    def get_final_optimized_systems_data(self):
+    
+    #Collect and return a list of dictionaries of all final optimized systems, sorted by their merit function values.
+    #Each dictionary includes the system's Node ID, Parent ID, Merit Function value, EFL, Children Count, and SEQ File Path.
+    #Handles cases where the merit function is 'No merit function' and sorts accordingly.
+    
+        final_depth = self.find_final_depth()
+        final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
+
+        # Collect data for all final optimized systems
+        optimized_systems_data = []
+        for node in final_depth_nodes:
+            parent_id = node.parent.id if node.parent else 'Root'
+            num_children = len(node.children)
+            merit_function = node.merit_function if isinstance(node.merit_function, float) else float('inf')  # Assign a high value for sorting
+            optimized_systems_data.append({
+                'Node ID': node.id,
+                'Parent ID': parent_id,
+                'Merit Function': merit_function if merit_function != float('inf') else "No merit function",
+                'EFL': node.efl,
+                'SEQ File Path': node.seq_file_path
+            })
+
+        # Sort the systems by merit function, placing 'No merit function' at the end
+        optimized_systems_data.sort(key=lambda x: (x['Merit Function'] == "No merit function", x['Merit Function']))
+
+        # Limit to the best 100 systems
+        optimized_systems_data = optimized_systems_data[:100]
+
+        return optimized_systems_data
+
+    
     # Just keep the best nodes at a given depth
         
     def keep_best_nodes(self, depth, max_nodes=10):
@@ -477,4 +511,27 @@ class SystemTree:
         sm.set_array([])
         cbar = fig.colorbar(sm, ax=ax, label='Log of Merit Function Value')
         ax.set_title("Optimization Tree Visualization")
+        plt.show()
+
+
+    def plot_best_merit_function_evolution(self):
+        """
+        Plot the merit function of all the parents of the best final node before the last final optimisation.
+        This allows to see the evolution of the merit function from the root to the best final system.
+        """
+        final_depth = self.find_final_depth()
+        final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
+        best_node = min(final_depth_nodes, key=lambda node: node.merit_function)
+
+        merit_function_evolution = []
+        current_node = best_node
+        while current_node.parent is not None:
+            merit_function_evolution.append(current_node.merit_function)
+            current_node = current_node.parent
+        merit_function_evolution.reverse()
+
+        plt.plot(merit_function_evolution)
+        plt.xlabel("Node Depth")
+        plt.ylabel("Merit Function")
+        plt.title(f"Merit Function Evolution for Best Final Node")
         plt.show()
