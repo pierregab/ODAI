@@ -8,7 +8,7 @@ import pythoncom
 import os
 
 data_from_ui = None
-final_data = None
+
 
 class PrintLogger:  # create file like object
     def __init__(self, textbox):  # pass reference to text widget
@@ -101,7 +101,6 @@ def submit():
 
 def start_optimization_thread(data):
     def manage_optical_system():
-        global final_data
         pythoncom.CoInitialize()  # Initialise COM pour ce thread
         try:
             optical_system_manager = OpticalSystemManager_eyepieces()
@@ -141,19 +140,20 @@ def reset_logging():
     sys.stderr = sys.__stderr__
     
 
-def update_seq_files_combobox():
-    # Extraire tous les chemins des fichiers .seq de la dernière colonne du TreeView
+def update_seq_files_combobox(combobox):
     seq_files = [tree.item(row)['values'][-1] for row in tree.get_children()]
-    # Mettre à jour le combobox avec les noms de ces fichiers
-    seq_combobox['values'] = seq_files
+    combobox['values'] = seq_files
     if seq_files:
-        seq_combobox.current(0)  # Sélectionnez le premier fichier par défaut, si la liste n'est pas vide
+        combobox.current(0)
 
-def open_selected_seq_file():
-    selected_file_path = seq_combobox.get()
-    if selected_file_path:
+
+def open_selected_seq_file(file_path):
+    if file_path:
         try:
-            os.startfile(selected_file_path)
+            os.startfile(file_path)  # Sur Windows
+        except AttributeError:
+            # Pour les systèmes Unix/Linux, adaptez selon le gestionnaire de fichiers utilisé
+            os.system(f'xdg-open "{file_path}"')  # Sur Unix/Linux
         except Exception as e:
             print(f"Erreur lors de l'ouverture du fichier : {e}")
     else:
@@ -178,28 +178,70 @@ def show_actions_window():
     tk.Checkbutton(actions_window, text="Spot Diameter", variable=spot_diameter_var).pack(anchor='w')
     
     tk.Button(actions_window, text="Appliquer", command=apply_actions).pack()
+   
+def add_file_action_row():
+    row_frame = ttk.Frame(file_list_frame)
+    row_frame.pack(fill='x', expand=True, pady=2)
+
+    # Création d'un Combobox pour choisir un fichier .seq
+    file_combobox = ttk.Combobox(row_frame, state="readonly", width=40)
+    file_combobox.pack(side=tk.LEFT, padx=5)
+    update_seq_files_combobox(file_combobox)  # Mise à jour du combobox avec les fichiers disponibles
+
+    # Bouton "Ouvrir" pour le fichier sélectionné
+    open_file_button = ttk.Button(row_frame, text="Ouvrir", command=lambda: open_selected_seq_file(file_combobox.get()))
+    open_file_button.pack(side=tk.LEFT, padx=5)
+
+    # Bouton "Actions" pour ouvrir les options d'actions pour le fichier sélectionné
+    actions_button = ttk.Button(row_frame, text="Actions", command=lambda: show_actions_window(row_frame))
+    actions_button.pack(side=tk.LEFT, padx=5)
+
+    # Stockage des widgets et variables pour une utilisation ultérieure
+    action_rows.append({
+        "file_combobox": file_combobox,
+        "row_frame": row_frame,
+        "actions": {"spot_diagram_var": tk.IntVar(value=0), "mtf_var": tk.IntVar(value=0), "spot_diameter_var": tk.IntVar(value=0)}
+    })
+
+    
+    def show_actions_window(row_frame):
+    # Trouver la ligne et les variables d'action correspondantes dans 'action_rows'
+        for row in action_rows:
+            if row["row_frame"] == row_frame:
+                actions = row["actions"]
+                break
+        else:
+            print("Erreur : Ligne non trouvée.")
+            return
+
+        # Création de la fenêtre de dialogue
+        actions_window = tk.Toplevel(root)
+        actions_window.title("Sélectionnez les actions")
+
+        # Ajout des cases à cocher pour chaque action dans la fenêtre de dialogue
+        tk.Checkbutton(actions_window, text="Spot Diagram", variable=actions["spot_diagram_var"]).pack(anchor='w')
+        tk.Checkbutton(actions_window, text="MTF", variable=actions["mtf_var"]).pack(anchor='w')
+        tk.Checkbutton(actions_window, text="Spot Diameter", variable=actions["spot_diameter_var"]).pack(anchor='w')
+
+        # Bouton pour fermer la fenêtre de dialogue après sélection
+        ttk.Button(actions_window, text="OK", command=actions_window.destroy).pack()
+
+
+
 
 def apply_actions():
-    selected_file = seq_combobox.get()
-    if not selected_file:
-        print("Aucun fichier sélectionné.")
-        return
+    for row in action_rows:
+        selected_file = row["file_combobox"].get()
+        if not selected_file:
+            print("Aucun fichier sélectionné pour une ligne.")
+            continue
 
-    if spot_diagram_var.get():
-        print(f"Spot Diagram sélectionné pour {selected_file}")
-        # Logique pour Spot Diagram ici
-    
-    if mtf_var.get():
-        print(f"MTF sélectionné pour {selected_file}")
-        # Logique pour MTF ici
-    
-    if spot_diameter_var.get():
-        print(f"Spot Diameter sélectionné pour {selected_file}")
-        # Logique pour Spot Diameter ici
-
-
-
-
+        if row["spot_diagram_var"].get():
+            perform_spot_diagram(selected_file)
+        if row["mtf_var"].get():
+            perform_mtf(selected_file)
+        if row["spot_diameter_var"].get():
+            perform_spot_diameter(selected_file)
 
 
 
@@ -223,7 +265,7 @@ if __name__ == "__main__":
     tab_starting_system = ttk.Frame(tab_control)
     tab_console_output = ttk.Frame(tab_control)
     tab_output=ttk.Frame(tab_control)
-    
+   
     tab_control.add(tab_environment, text='Environment')
     tab_control.add(tab_sp, text='SP Parameters')
     tab_control.add(tab_tree, text='Tree')
@@ -378,6 +420,16 @@ if __name__ == "__main__":
     # Ouvrir actions lorsque cliquées
     actions_button = ttk.Button(seq_combobox_frame, text="Actions", command=show_actions_window)
     actions_button.pack(side=tk.LEFT, padx=5)
+
+    action_rows = []  # Pour stocker les widgets et variables de chaque ligne
+
+    # Ajoutez le bouton "+" à votre UI, qui appelle add_file_action_row quand cliqué
+    add_row_button = ttk.Button(root, text="+", command=add_file_action_row)
+    add_row_button.pack(pady=5)
+
+    # Après avoir initialisé 'tab_output'
+    file_list_frame = ttk.Frame(tab_output)
+    file_list_frame.pack(fill='both', expand=True, pady=5)
 
 
     # Submit button
