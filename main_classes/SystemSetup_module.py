@@ -13,6 +13,8 @@ class SystemSetup:
           self.surfaces = {}   # dict to keep track of surfaces
           self.ref_mode = 'radius'  # Default mode is 'radius'
           self.saved_systems = {}  # dict to keep track of saved systems
+          self.rms = []
+          self.spot = []
 
       class Surface:
           def __init__(self, parent, number, radius, thickness, material=None):
@@ -479,6 +481,10 @@ class SystemSetup:
                 self.cv.Command(f"DEL S{surface_num}")
 
         self.ref_mode = None  # Reset the reference mode
+        self.rms = []  # Reset the RMS values
+        self.spot = []  # Reset the spot values
+
+
 
 
       def save_system_parameters(self):
@@ -501,7 +507,19 @@ class SystemSetup:
             }
         return saved_params
 
+      def represent_spot_diameter(self):
+        #print(self.rms)
+        print(self.spot)
+        spot_diameter = [float(diameter[-1]) for diameter in self.spot]
+        print(spot_diameter)
+        plt.plot([spot_data[0] for spot_data in self.spot], spot_diameter, 'ro')
+        
+        plt.xlabel('Field Height')
+        plt.ylabel('Spot Diameter')
+        plt.title('Spot Diameter vs Field Height')
+        plt.grid(True)
 
+        plt.show()
 
       def load_system_parameters(self, saved_params):
         self.clear_system()  # Clear the current system
@@ -605,125 +623,282 @@ class SystemSetup:
 
             print("-" * 30)  # Separator for better readability
 
-      def get_spot_diagram(self, affichage = False):
+      def get_spot_diagram_and_field_angles(self, affichage = False):
 
-        def extract_text(texte,mot_cle,bool):
-      # Utiliser une expression régulière pour trouver la première occurrence de 'Wavelength'
-          if bool :
-            pattern = re.compile(rf'{mot_cle}\s+\d+\.\d+')
-          else:
-            pattern = re.compile(rf'{mot_cle}')
-          match = pattern.search(texte)
+              def extract_text(texte,mot_cle,bool):
+                if bool :
+                  pattern = re.compile(rf'{mot_cle}\s+\d+\.\d+')
+                else:
+                  pattern = re.compile(rf'{mot_cle}')
+                match = pattern.search(texte)
 
-          if match:
-            # Extraire le texte du début jusqu'à l'occurrence de 'Wavelength' (exclu)
-            texte_avant_wavelength = texte[:match.start()].strip()
-            texte = texte[match.start():]
-            return(texte_avant_wavelength,texte)
-          else:
-            # Si 'Wavelength' n'est pas trouvé, retourner le texte entier
-            return ('Error: no match',texte)
+                if match:
+                  texte_avant_wavelength = texte[:match.start()].strip()
+                  texte = texte[match.start():]
+                  return(texte_avant_wavelength,texte)
+                else:
+                  return ('Error: no match',texte)
 
 
-        def extract_data(text): # retourne un dictionnaire avec les données
-          # Split the text by 'Wavelength' to separate different sections
-          sections = text.split("Wavelength")
+              def extract_data(text): # retourne un dictionnaire avec les données
+                # Split the text by 'Wavelength' to separate different sections
+                sections = text.split("Wavelength")
 
-          data = {}
+                data = {}
 
-          # Regular expression to match numeric patterns
-          number_pattern = re.compile(r"-?\d+\.\d+")
+                # Regular expression to match numeric patterns
+                number_pattern = re.compile(r"-?\d+\.\d+")
 
-          for section in sections[1:]:  # Skip the first split part as it's before the first 'Wavelength'
-            lines = section.splitlines()
-          
-            # First line after 'Wavelength' contains the wavelength value
-            wavelength = float(lines[0].strip())
-          
-            # Initialize a list to hold X and Y pairs for this wavelength
-            data[wavelength] = []
+                for section in sections[1:]:  # Skip the first split part as it's before the first 'Wavelength'
+                  lines = section.splitlines()
+                
+                  # First line after 'Wavelength' contains the wavelength value
+                  wavelength = float(lines[0].strip())
+                
+                  # Initialize a list to hold X and Y pairs for this wavelength
+                  data[wavelength] = []
 
-            # Iterate over the remaining lines to find numeric data
-            for line in lines[1:]:
-              numbers = number_pattern.findall(line)
-              # Convert found strings to floats and pair them as (X, Y)
-              paired_numbers = [(float(numbers[i]), float(numbers[i+1])) for i in range(0, len(numbers), 2)]
-              data[wavelength].extend(paired_numbers)
+                  # Iterate over the remaining lines to find numeric data
+                  for line in lines[1:]:
+                    numbers = number_pattern.findall(line)
+                    # Convert found strings to floats and pair them as (X, Y)
+                    paired_numbers = [(float(numbers[i]), float(numbers[i+1])) for i in range(0, len(numbers) - 1, 2) if i+1 < len(numbers)]
+                    data[wavelength].extend(paired_numbers)
 
-          return data
+                return data
+              
+              def extract_values(text,field_angles,k_rms,k_spot):
+                # Regular expression patterns for the required values
+                  centroid_and_rms_diameter_patterns = re.compile(r'Displacement of centroid\s+Minimum RMS spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)\s+MM')
+                  spot_center_and_spot_diameter_patterns = re.compile(r'Displacement of center of 100% Spot\s+Minimum 100% spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)')
+
+                  k_rms2=k_rms
+                  k_spot2=k_spot
+
+                  # Search for matches in the text
+                  centroid_and_rms_diameter_matches = centroid_and_rms_diameter_patterns.search(text)
+                  spot_center_and_spot_diameter_matches = spot_center_and_spot_diameter_patterns.search(text)
+
+                  # Extract the values
+                  centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
+                  spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
+
+                  if rms_diameter != 'N/A':
+                    angle1,angle2=field_angles[k_rms2]
+                    self.rms.append([angle2, centroid_x, centroid_y, rms_diameter])
+                    k_rms2+=1  
+                  #print(self.rms)
+                  if spot_diameter != 'N/A':
+                    angle1,angle2=field_angles[k_spot2]
+                    self.spot.append([angle2, spot_center_x, spot_center_y, spot_diameter])
+                    print(self.spot)
+                    k_spot2+=1
+                  return (k_rms2,k_spot2)
+                
+              def extract_field_angles(text):
+                # Regular expression to find "Field" lines and capture angle values
+                pattern = re.compile(r"Field\s+\d+,\s+\(\s*([-\d.]+),\s*([-\d.]+)\)\s+degrees")
+                # Find all matches in the text
+                matches = pattern.findall(text)
+                # Convert the captured groups into a list of tuples (angle_x, angle_y)
+                field_angles = [(float(m[0]), float(m[1])) for m in matches]
+                return field_angles
+
+              def plot_combined_data(datas):
+                  num_plots = len(datas)
+                  # Pour chaque graphe, une ligne. Pas de colonne supplémentaire car on veut un layout vertical
+                  num_rows = num_plots
+                  num_cols = 1
+                  
+                  plt.figure(figsize=(5, 5 * num_rows))  # Hauteur ajustée selon le nombre de sous-graphes
+                  
+                  for k, data in enumerate(datas, start=1):
+                      ax = plt.subplot(num_rows, num_cols, k)  # Crée un sous-graphe pour chaque ensemble de données
+                      
+                      # Générer une palette de couleurs
+                      colors = plt.cm.jet(np.linspace(0, 1, len(data)))
+                      
+                      for (wavelength, points), color in zip(data.items(), colors):
+                          x_values, y_values = zip(*points)  # Séparation des coordonnées X et Y
+                          x_values_sym = [-x for x in x_values]  # Points symétriques sur l'axe X
+                          y_values_sym = y_values  # Les valeurs Y restent les mêmes
+                          
+                          # Concaténation des valeurs pour les afficher
+                          x_combined = list(x_values) + x_values_sym
+                          y_combined = list(y_values) + list(y_values_sym)
+                          
+                          ax.scatter(x_combined, y_combined, color=color, label=f"{wavelength} nm")
+                      
+                      ax.set_title(f"Field {k}")
+                      ax.set_xlabel("X (MM)")
+                      ax.set_ylabel("Y (MM)")
+                      ax.legend()
+                      ax.grid(True)
+                  
+                  plt.tight_layout()
+                  plt.show()
+              
+              
+
+              self.cv.Command("SPO; CAN;")
+              self.cv.Command("SPO")
+              self.cv.Command("LIS YES;")
+                  
+
+              info=self.cv.Command("GO")
+              
+              text=[]
+              data=[]
+              field_angles=extract_field_angles(info)
+              for k in range(len(field_angles)):
+                  values,info= extract_text(info, 'Wavelength',True)
+                  if k==len(field_angles)-1:
+                    data_degrees,info= extract_text(info, "The",False)
+                  else:
+                    data_degrees,info= extract_text(info, "Ray",False)
+                  text.append(values)
+                  data.append(data_degrees)
+              extracted_data = [extract_data(datas) for datas in data]
+              if affichage:
+                plot_combined_data(extracted_data)
+                
+              k_rms=0
+              k_spot=0
+              for texts in text:
+                (k_rms2,k_spot2)=extract_values(texts,field_angles,k_rms,k_spot)
+                k_rms,k_spot=k_rms2,k_spot2
+              
+      
+      def get_mtf(self,affichage = False):
+        self.cv.Command("MTF; CAN;")
+        self.cv.Command("MTF")
+        self.cv.Command("GEO NO;")
+
+        text=self.cv.Command("GO")
+        # Split the text into lines
+        lines = text.split('\n')
         
-        def extract_values(text):
-          # Regular expression patterns for the required values
-          centroid_and_rms_diameter_patterns = re.compile(r'Displacement of centroid\s+Minimum RMS spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)\s+MM')
-          spot_center_and_spot_diameter_patterns = re.compile(r'Displacement of center of 100% Spot\s+Minimum 100% spot diameter\s+X:\s+([-\d.E+]+)\s+Y:\s+([-\d.E+]+)\s+([\d.E+-]+)')
+        # Initialize containers for the different types of data
+        focal_lengths = {'X': [], 'Y': []}
+        f_numbers = {'X': [], 'Y': []}
+        mtf_data = []
+        datas = []
+        wavelengths = {}
+        field_angles = []
 
+        # Patterns to match numeric values
+        numeric_pattern = re.compile(r'(-?\d+\.\d+E[+-]\d+|-?\d+\.\d+)')
+        mtf_pattern = re.compile(r'^\s*(\d+)\s+(\.\d+)\s+(\.\d+)\s+(\.\d+)\s+(\.\d+)\s+(\.\d+)')
+        wavelength_pattern = re.compile(r'\s+(\d+\.\d+)\s+NM\s+(\d+)\s+(\d+)')
+        field_angle_pattern = re.compile(r'FIELD\s+(\d+)\s+\(ANG\)\s+=\s+\(\s*([\d.]+),\s*([\d.]+)\)\s+DEG,')
 
-          # Search for matches in the text
-          centroid_and_rms_diameter_matches = centroid_and_rms_diameter_patterns.search(text)
-          spot_center_and_spot_diameter_matches = spot_center_and_spot_diameter_patterns.search(text)
+        current_section = None
 
-          # Extract the values
-          centroid_x, centroid_y, rms_diameter = centroid_and_rms_diameter_matches.groups() if centroid_and_rms_diameter_matches else ('N/A', 'N/A','N/A')
-          spot_center_x, spot_center_y, spot_diameter = spot_center_and_spot_diameter_matches.groups() if spot_center_and_spot_diameter_matches else ('N/A', 'N/A','N/A')
+        for line in lines:
+            if 'X and Y focal lengths for each field angle' in line:
+                current_section = 'focal_lengths'
+                continue
+            elif 'X and Y F-numbers for each field angle' in line:
+                current_section = 'f_numbers'
+                continue
+            elif 'Reference sphere radius for each field angle' in line:
+                current_section = 'reference_sphere'
+                continue  # This changes the current section, stopping F number extraction
+            elif 'DIFFRACTION LIMIT' in line:
+                current_section = 'mtf'
+                continue
 
-          return {
-              'centroid_x': centroid_x,
-              'centroid_y': centroid_y,
-              'rms_diameter': rms_diameter,
-              'spot_center_x': spot_center_x,
-              'spot_center_y': spot_center_y,
-              'spot_diameter': spot_diameter
-          }
+            if current_section == 'focal_lengths':
+                # Assuming all numeric values belong to this section and alternate as X, Y
+                numeric_matches = numeric_pattern.findall(line)
+                if numeric_matches:
+                    focal_lengths['X'].extend(numeric_matches[::2])  # Extract X values
+                    focal_lengths['Y'].extend(numeric_matches[1::2])  # Extract Y values
 
+            elif current_section == 'f_numbers':
+                numeric_matches = numeric_pattern.findall(line)
+                if numeric_matches:
+                    f_numbers['X'].extend(numeric_matches[::2])  # Extract X values
+                    f_numbers['Y'].extend(numeric_matches[1::2])  # Extract Y values
 
-        def plot_combined_data(data):
-          plt.figure()
+            elif current_section == 'mtf':
+                match = mtf_pattern.search(line)
+                if match:
+                    mtf_data.append((int(match.group(1)), *map(float, match.groups()[1:])))
+                    if int(match.group(1)) == 406:  # Last line of MTF data for current section
+                        datas.append(mtf_data)
+                        mtf_data = []  # Reset for next section
 
-          # Générer une palette de couleurs
-          colors = plt.cm.jet(np.linspace(0, 1, len(data)))
+            # Extract wavelengths and field angles as before
+            wavelength_match = wavelength_pattern.search(line)
+            if wavelength_match:
+                wl = float(wavelength_match.group(1))
+                weight = int(wavelength_match.group(2))
+                no_of_rays = int(wavelength_match.group(3))
+                if wl not in wavelengths:
+                    wavelengths[wl] = {'weight': weight, 'no_of_rays': no_of_rays}
 
-          for (wavelength, points), color in zip(data.items(), colors):
-            x_values1, y_values = zip(*points)
-            x_values2 = [-x for x in x_values1] # Symmetric points for the other side of the axis not included in the data    
-            x_values = list(x_values1) + x_values2
-            y_values = y_values + y_values
-            plt.scatter(x_values, y_values, color=color, label=f"{wavelength} nm")
+            field_angle_match = field_angle_pattern.search(line)
+            if field_angle_match:
+                field_angles.append(float(field_angle_match.group(3)))
+        
 
-          plt.title("Ray Coordinates for Different Wavelengths")
-          plt.xlabel("X (MM)")
-          plt.ylabel("Y (MM)")
-          plt.legend()
-          plt.grid(True)
-          plt.show()
+        
+        if affichage and datas:
+            plt.figure(figsize=(10, 6))  # Créez une seule figure pour tous les graphiques
+            colors = ['r', 'g', 'b', 'c', 'm', 'y']  # Liste de couleurs de base
+            done = 0
 
-        self.cv.Command("SPO; CAN;")
-        self.cv.Command("SPO")
-        self.cv.Command("LIS YES;")
+            # Parcourir les données de chaque champ d'angle
+            for index, field_datas in enumerate(datas):
+                color = colors[index % len(colors)]
+
+                # Utilisation de listes pour recueillir les valeurs séparément
+                L_MM, diffraction_limit_rad, diffraction_limit_tan = [], [], []
+                focus_position_rad, focus_position_tan = [], []
+
+                # Trier les données par fréquence spatiale (L_MM) avant de tracer
+                field_datas_sorted = sorted(field_datas, key=lambda x: x[0])
+                for data in field_datas_sorted:
+                    l_mm, f_5000, diff_lim_rad, diff_lim_tan, foc_pos_rad, foc_pos_tan = data
+                    L_MM.append(l_mm)
+                    diffraction_limit_rad.append(diff_lim_rad)
+                    diffraction_limit_tan.append(diff_lim_tan)
+                    focus_position_rad.append(foc_pos_rad)
+                    focus_position_tan.append(foc_pos_tan)
+
+                angle_label = str(index+1)
+                angle = str(field_angles[index])
+                index += 1
+                if not done:
+                    plt.plot(L_MM, diffraction_limit_rad, 'k--', label='F' + angle_label + ': R Diff lim')
+                    plt.plot(L_MM, diffraction_limit_tan, 'k', label='F' + angle_label + ': T Diff lim')
+                    done = 1
+
+                plt.plot(L_MM, focus_position_rad, '--', color=color, label='F' + angle_label + ': R (ANG) ' + angle + ' deg')
+                plt.plot(L_MM, focus_position_tan, color=color, label='F' + angle_label + ': T (ANG) ' + angle + ' deg')
+            # Configuration globale du graphique
+            plt.title("Diffraction MTF")
+            plt.xlabel('Spatial Frequency (cycles/mm)')
+            plt.ylabel('Modulation')
+            plt.legend()
+            plt.grid(True)
             
+            # Créer un tableau en dessous du graphique pour les longueurs d'onde et leur poids
+            # Calculer la position du tableau en fonction de la taille du plot
+            table_data = [["Wavelength (nm)", "Weight",'Nb of rays']]
+            table_data.extend([[wl, info['weight'], info['no_of_rays']] for wl, info in wavelengths.items()])
+            
+            # Ajouter le tableau au plot
+            # bottom ajuste la position verticale du tableau
+            # cellLoc et colLoc centrent le texte dans les cellules
+            plt.table(cellText=table_data, colWidths=[0.2]*3, cellLoc='center', colLoc='center',
+                      loc='bottom', bbox=[0.0, -0.5, 1.0, 0.3])
 
-        info=self.cv.Command("GO")
-        
-        values_3_degrees,info = extract_text(info, 'Wavelength',True)
-        data_3_degrees,info = extract_text(info, "Ray",False)
-
-        values_6_degrees,info = extract_text(info, "Wavelength",True)
-        data_6_degrees,info = extract_text(info, "Ray",False)
-
-        values_0_degrees,info = extract_text(info, "Wavelength",True)
-        data_0_degrees,final_values = extract_text(info, "The",False)
-
-        text=[values_3_degrees,values_6_degrees,values_0_degrees,final_values]
-        data=[data_3_degrees,data_6_degrees,data_0_degrees]
-
-        extracted_data = [extract_data(datas) for datas in data]
-
-        if affichage :
-          plot_combined_data(extracted_data[0])
-          plot_combined_data(extracted_data[1])
-          plot_combined_data(extracted_data[2])
-
-        extracted_values= [extract_values(texts) for texts in text[0:3]]
-
+            plt.subplots_adjust(left=0.2, bottom=0.4)  # Ajuster l'espace pour le tableau
+            plt.show()
+                
+        return focal_lengths, f_numbers, datas, wavelengths, field_angles
 
 
       ############## Methods for the saddle point ###############
@@ -1188,11 +1363,10 @@ class SystemSetup:
 
                 # The efl must be within 10% of the target efl
                 if abs(efl - system1_efl) / efl > 0.1:
-                    print(f"  System 1 EFL ({system1_efl}) is not within 10% of the target EFL ({efl}), skipping.")
-
+                  print(f"  System 1 EFL ({system1_efl}) is not within 10% of the target EFL ({efl}), skipping.")
                 else:
                   system1_node = SystemNode(system_params=current_node.system_params, optical_system_state=system1_state, seq_file_path=system1_filename, 
-                                                parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
+                                parent=sp_node, merit_function=system1_merit_function, efl=system1_efl, is_optimized=True, depth=depth+1)
                   sp_node.add_child(system1_node)
                   system_tree.add_node(system1_node)
 
@@ -1208,13 +1382,12 @@ class SystemSetup:
                 # The efl must be within 10% of the target efl
                 if abs(efl - system2_efl) / efl > 0.1:
                     print(f"  System 2 EFL ({system2_efl}) is not within 10% of the target EFL ({efl}), skipping.")
-
                 else:
                   system2_node = SystemNode(system_params=current_node.system_params, optical_system_state=system2_state, seq_file_path=system2_filename,
                                                 parent=sp_node, merit_function=system2_merit_function, efl=system2_efl, is_optimized=True, depth=depth+1)
                   sp_node.add_child(system2_node)
                   system_tree.add_node(system2_node)
-
+                  
             # Restore the original optical system state after each saddle point iteration
             self.load_system_parameters(original_state)
           
