@@ -9,6 +9,7 @@ import os
 
 data_from_ui = None
 
+
 class PrintLogger:  # create file like object
     def __init__(self, textbox):  # pass reference to text widget
         self.textbox = textbox  # keep ref
@@ -157,12 +158,59 @@ def open_selected_seq_file():
     else:
         print("Aucun fichier sélectionné.")
 
+def perform_action(action_name):
+    selected_file = seq_combobox.get()
+    if not selected_file:
+        print("Aucun fichier sélectionné.")
+        return
+
+    print(f"Action {action_name} sélectionnée pour le fichier {selected_file}")
+    # Ici, vous pouvez ajouter la logique spécifique à chaque action
+    # Par exemple, appeler une fonction différente en fonction de action_name
+
+def show_actions_window():
+    actions_window = tk.Toplevel(root)
+    actions_window.title("Sélectionnez les actions")
+    
+    tk.Checkbutton(actions_window, text="Spot Diagram", variable=spot_diagram_var).pack(anchor='w')
+    tk.Checkbutton(actions_window, text="MTF", variable=mtf_var).pack(anchor='w')
+    tk.Checkbutton(actions_window, text="Spot Diameter", variable=spot_diameter_var).pack(anchor='w')
+    
+    tk.Button(actions_window, text="Appliquer", command=apply_actions).pack()
+
+def apply_actions():
+    selected_file = seq_combobox.get()
+    if not selected_file:
+        print("Aucun fichier sélectionné.")
+        return
+
+    if spot_diagram_var.get():
+        print(f"Spot Diagram sélectionné pour {selected_file}")
+        # Logique pour Spot Diagram ici
+    
+    if mtf_var.get():
+        print(f"MTF sélectionné pour {selected_file}")
+        # Logique pour MTF ici
+    
+    if spot_diameter_var.get():
+        print(f"Spot Diameter sélectionné pour {selected_file}")
+        # Logique pour Spot Diameter ici
+
+
+
+
+
+
 
 if __name__ == "__main__":
     # Create the main window
     root = tk.Tk()
     root.title("Optical System Configuration Interface")
 
+    spot_diagram_var = tk.IntVar()
+    mtf_var = tk.IntVar()
+    spot_diameter_var = tk.IntVar()
+    
     wavelength_entries = []
     field_entries = []
     lens_thickness_steps_entries = []
@@ -325,6 +373,11 @@ if __name__ == "__main__":
     # Vous pouvez ajouter un bouton à côté du combobox si nécessaire, par exemple, pour ouvrir le fichier .seq sélectionné
     open_seq_file_button = ttk.Button(seq_combobox_frame, text="Ouvrir", command=open_selected_seq_file)
     open_seq_file_button.pack(side=tk.LEFT, padx=5)
+    
+    # Ouvrir actions lorsque cliquées
+    actions_button = ttk.Button(seq_combobox_frame, text="Actions", command=show_actions_window)
+    actions_button.pack(side=tk.LEFT, padx=5)
+
 
     # Submit button
     submit_button = ttk.Button(root, text="Submit", command=submit)
