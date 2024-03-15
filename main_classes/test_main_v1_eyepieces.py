@@ -198,11 +198,6 @@ def apply_actions():
         # Logique pour Spot Diameter ici
 
 
-
-
-
-
-
 if __name__ == "__main__":
     # Create the main window
     root = tk.Tk()
