@@ -109,11 +109,11 @@ def start_optimization_thread(data):
             optical_system_manager.start_system()
             final_data=optical_system_manager.evolve_and_optimize()
             optical_system_manager.end_system()
-            print("Session CodeV terminée.")
+            print("Session CodeV finished")
             # Utilise `root.after` pour planifier l'affichage des données dans l'UI sur le thread principal
             root.after(0, lambda: display_final_data_in_ui(final_data))
         except Exception as e:
-            print(f"Une erreur est survenue : {e}")
+            print(f"An error has occurred : {e}")
         finally:
             pythoncom.CoUninitialize()  # Désinitialise COM pour ce thread
     def display_final_data_in_ui(final_data):
@@ -123,7 +123,7 @@ def start_optimization_thread(data):
                 system_data['EFL'], system_data['SEQ File Path']
             ))
         update_seq_files_combobox()
-   
+  
     # Création et démarrage du thread
     thread = threading.Thread(target=manage_optical_system)
     thread.start()
@@ -155,23 +155,23 @@ def open_selected_seq_file():
         try:
             os.startfile(selected_file_path)
         except Exception as e:
-            print(f"Erreur lors de l'ouverture du fichier : {e}")
+            print(f"Error opening file : {e}")
     else:
-        print("Aucun fichier sélectionné.")
+        print("No files selected")
 
 def perform_action(action_name):
     selected_file = seq_combobox.get()
     if not selected_file:
-        print("Aucun fichier sélectionné.")
+        print("No files selected")
         return
 
-    print(f"Action {action_name} sélectionnée pour le fichier {selected_file}")
+    print(f"Action {action_name} selected for the file {selected_file}")
     # Ici, vous pouvez ajouter la logique spécifique à chaque action
     # Par exemple, appeler une fonction différente en fonction de action_name
 
 def show_actions_window():
     actions_window = tk.Toplevel(root)
-    actions_window.title("Sélectionnez les actions")
+    actions_window.title("Select the actions")
     
     tk.Checkbutton(actions_window, text="Spot Diagram", variable=spot_diagram_var).pack(anchor='w')
     tk.Checkbutton(actions_window, text="MTF", variable=mtf_var).pack(anchor='w')
@@ -182,19 +182,19 @@ def show_actions_window():
 def apply_actions():
     selected_file = seq_combobox.get()
     if not selected_file:
-        print("Aucun fichier sélectionné.")
+        print("No file selected")
         return
 
     if spot_diagram_var.get():
-        print(f"Spot Diagram sélectionné pour {selected_file}")
+        print(f"Spot Diagram selected for {selected_file}")
         # Logique pour Spot Diagram ici
     
     if mtf_var.get():
-        print(f"MTF sélectionné pour {selected_file}")
+        print(f"MTF selected for {selected_file}")
         # Logique pour MTF ici
     
     if spot_diameter_var.get():
-        print(f"Spot Diameter sélectionné pour {selected_file}")
+        print(f"Spot Diameter selected for {selected_file}")
         # Logique pour Spot Diameter ici
 
 
