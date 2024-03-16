@@ -264,7 +264,7 @@ class SystemTree:
         # Find all optimized nodes at the final depth
         final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
 
-        self.plot_best_merit_function_evolution()
+        #self.plot_best_merit_function_evolution()
 
         for i, node in enumerate(final_depth_nodes):
             print(f"Optimizing Node {i+1}/{len(final_depth_nodes)} at Final Depth {final_depth}")
