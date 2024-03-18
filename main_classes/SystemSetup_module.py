@@ -15,6 +15,12 @@ class SystemSetup:
           self.saved_systems = {}  # dict to keep track of saved systems
           self.rms = []
           self.spot = []
+          
+      def load_seq_file(self, seq_file_path):
+          """Charge un fichier .seq dans CODE V."""
+          load_command = f'run "{seq_file_path}"; GO'
+          self.cv.Command(load_command)
+          print(f"Loaded .seq file: {seq_file_path}")
 
       class Surface:
           def __init__(self, parent, number, radius, thickness, material=None):
@@ -768,7 +774,7 @@ class SystemSetup:
                 (k_rms2,k_spot2)=extract_values(texts,field_angles,k_rms,k_spot)
                 k_rms,k_spot=k_rms2,k_spot2
               
-      
+     
       def get_mtf(self,affichage = False):
         self.cv.Command("MTF; CAN;")
         self.cv.Command("MTF")
