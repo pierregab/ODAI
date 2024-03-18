@@ -9,6 +9,9 @@ import os
 
 data_from_ui = None
 final_data = None
+optical_system_manager = OpticalSystemManager_eyepieces()
+final_data = None
+file_path = None
 
 class PrintLogger:
     def __init__(self, textbox):  # Initialize with a reference to the GUI textbox
@@ -297,19 +300,40 @@ class OpticalSystemConfigInterface:
     def start_optimization_thread(self, data):
         def manage_optical_system():
             global final_data
-            pythoncom.CoInitialize()  # Initialize COM for this thread
+            global optical_system_manager
+            pythoncom.CoInitialize()  # Initialise COM pour ce thread
             try:
-                optical_system_manager = OpticalSystemManager_eyepieces()
-                optical_system_manager.update_parameters_from_ui(data)
+                optical_system_manager.update_parameters_from_ui(data)  # Met à jour les paramètres avec les données de l'UI
                 optical_system_manager.start_system()
-                final_data = optical_system_manager.evolve_and_optimize()
+                final_data=optical_system_manager.evolve_and_optimize()
+                print(final_data)
+                for node in final_data:
+                        load_command=f'run "{node["SEQ File Path"]}"; GO'
+                        optical_system_manager.optical_system.cv.Command(load_command)
+                        optical_system_manager.optical_system.update_all_surfaces_from_codev
+                        #system.load_system_parameters(node['Optical System State'])
+                        file_path=data["base_file_path"]+'/figures'
+                        file_name = node["SEQ File Path"].split('/')
+                        file_name = file_name[-1].split('.')
+                        file_name = file_name[0]
+                        optical_system_manager.optical_system.get_mtf(True,file_path,file_name)
+                        optical_system_manager.optical_system.get_spot_diagram_and_field_angles(True,file_path,file_name)
+                        optical_system_manager.optical_system.represent_spot_diameter(file_path,file_name)
+
                 optical_system_manager.end_system()
-                print("Session CodeV finished")
-                self.root.after(0, lambda: self.display_final_data_in_ui(final_data))
+                # Utilise `root.after` pour planifier l'affichage des données dans l'UI sur le thread principal
+                root.after(0, lambda: display_final_data_in_ui(final_data))
             except Exception as e:
-                print(f"An error has occurred: {e}")
+                print(f"Une erreur est survenue : {e}")
             finally:
-                pythoncom.CoUninitialize()
+                pythoncom.CoUninitialize()  # Désinitialise COM pour ce thread
+        def display_final_data_in_ui(final_data):
+            for system_data in final_data:
+                self.tree.insert("", "end", values=(
+                    system_data['Node ID'], system_data['Parent ID'], system_data['Merit Function'],
+                    system_data['EFL'], system_data['SEQ File Path']
+                ))
+            self.update_seq_files_combobox()
             # Création et démarrage du thread pour exécuter manage_optical_system
         thread = threading.Thread(target=manage_optical_system)
         thread.start()
@@ -348,7 +372,7 @@ class OpticalSystemConfigInterface:
     def show_actions_window(self):
         actions_window = tk.Toplevel(self.root)
         actions_window.title("Select Actions")
-
+        actions_window.geometry('400x300')
         # Configurez vos variables et widgets ici
         tk.Checkbutton(actions_window, text="Spot Diagram", variable=self.spot_diagram_var).pack(anchor='w')
         tk.Checkbutton(actions_window, text="MTF", variable=self.mtf_var).pack(anchor='w')
@@ -364,18 +388,35 @@ class OpticalSystemConfigInterface:
             print("No file selected")
             return
 
+        # Enlever l'extension .seq et préparer le préfixe du chemin pour les images
+        base_name = os.path.basename(selected_file).replace(".seq", "")
+        figures_path = "C:/CVUSER/figures"
+
         # Ici, vous appliquez les actions en fonction des variables de contrôle
         if self.spot_diagram_var.get():
             print(f"Applying Spot Diagram action on {selected_file}")
-            # Implémentez l'action Spot Diagram ici
+            spot_diagram_path = os.path.join(figures_path, "Spot_Diagram", f"{base_name}_Spot_Diagram.png")
+            if os.path.exists(spot_diagram_path):
+                os.startfile(spot_diagram_path)
+            else:
+                print("Spot Diagram image not found.")
 
         if self.mtf_var.get():
             print(f"Applying MTF action on {selected_file}")
-            # Implémentez l'action MTF ici
+            mtf_path = os.path.join(figures_path, "MTF", f"{base_name}_MTF.png")
+            if os.path.exists(mtf_path):
+                os.startfile(mtf_path)
+            else:
+                print("MTF image not found.")
 
         if self.spot_diameter_var.get():
             print(f"Applying Spot Diameter action on {selected_file}")
-            # Implémentez l'action Spot Diameter ici
+            spot_diameter_path = os.path.join(figures_path, "Spot_Diameter", f"{base_name}_Spot_Diameter.png")
+            if os.path.exists(spot_diameter_path):
+                os.startfile(spot_diameter_path)
+            else:
+                print("Spot Diameter image not found.")
+
 
 
     def redirect_logging(self):
