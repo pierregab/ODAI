@@ -366,6 +366,7 @@ class OpticalSystemConfigInterface:
             print("No file selected")
             return
         
+        absolute_path = os.path.abspath(selected_file)
         optical_system = SystemSetup()
 
         # Ici, vous appliquez les actions en fonction des variables de contrôle
@@ -377,7 +378,7 @@ class OpticalSystemConfigInterface:
             print(f"Applying MTF action on {selected_file}")
         
             # Chargez le fichier .seq dans le système
-            optical_system.load_seq_file(selected_file)
+            optical_system.load_seq_file(absolute_path)
 
             # Générez la MTF
             mtf_results = optical_system.get_mtf()
