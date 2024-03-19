@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from rayoptics.environment import InteractiveLayout, open_model
 import io
 import os
 import numpy as np

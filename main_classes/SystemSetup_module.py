@@ -1153,46 +1153,6 @@ class SystemSetup:
           # Save the final system
           self.save_system(file_path)
 
-      def plot_optical_system(self, file_path, xlim=(0, 10), ylim=(-15, 15), hide_axes=True):
-          """
-          Plot the final optical system layout using rayoptics.
-
-          :param file_path: Path to the .seq file for the optical system.
-          :param xlim: Tuple for x-axis limits of the plot.
-          :param ylim: Tuple for y-axis limits of the plot.
-          :param hide_axes: Boolean to determine whether to hide the axes.
-          """
-          # Import necessary modules for rayoptics
-          from rayoptics.environment import open_model, InteractiveLayout
-          import matplotlib.pyplot as plt
-
-          # Load the optical model
-          opm = open_model(file_path)
-
-          # Create an InteractiveLayout instance
-          layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm, 
-                                  do_draw_rays=False, do_draw_beams=False, 
-                                  do_draw_edge_rays=False, do_draw_ray_fans=False, 
-                                  do_paraxial_layout=False)
-
-          # Get the axis for customization
-          ax = layout_plt.gca()
-          if hide_axes:
-              ax.grid(False)
-              ax.axis('off')
-          else:
-              ax.grid(True)
-
-          ax.set_ylim(0, 0.5)
-
-          # Adjust figure size and limits
-          layout_plt.plot()
-          plt.xlim(*xlim)
-          plt.ylim(*ylim)
-
-          # Show the plot
-          plt.show()
-
       def sp_create_and_increase_thickness(self,sp,reference_surface_number,lens_thickness,file_path, efl):
 
           self.switch_ref_mode('curvature')
