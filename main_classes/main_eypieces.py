@@ -7,7 +7,7 @@ class OpticalSystemManager:
         self.default_wavelengths = [486.1327, 546.074, 587.5618, 632.2, 657.2722]
         self.default_fd = 5
         self.default_dimensions = 'm'
-        self.default_fields = [(0, 3), (0, 6), (0, 35)]
+        self.default_fields = [(0, 3), (0, 6), (0, 40)]
         self.default_efl = 1
 
         # Root parameters
