@@ -94,65 +94,6 @@ class SystemTree:
         # Determine if the systems are similar based on the distance and threshold
         return distance < threshold
 
-    def plot_node(self, node, axs, row, col):
-        if node.seq_file_path and os.path.exists(node.seq_file_path):
-            png_buffer = self.plot_single_system(node.seq_file_path)
-            img_arr = plt.imread(png_buffer)
-            ax = axs[row, col]
-            ax.imshow(img_arr)
-            ax.axis('off')
-            ax.set_title(os.path.basename(node.seq_file_path).split('.')[0])
-
-    def plot_single_system(self, file_path):
-        opm = open_model(file_path)
-        layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm, 
-                                do_draw_rays=False, do_draw_beams=False, 
-                                do_draw_edge_rays=False, do_draw_ray_fans=False, 
-                                do_paraxial_layout=False)
-        ax = layout_plt.gca()
-        ax.grid(False)
-        ax.axis('off')
-        ax.set_ylim(0, 0.5)
-        layout_plt.plot()
-        plt.xlim(0, 10)
-        plt.ylim(-15, 15)
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        plt.close(layout_plt)
-        buf.seek(0)
-        return buf
-
-
-    def plot_optical_system_tree(self, node=None, depth=0, col=0, axs=None):
-        if node is None:
-            node = self.root
-
-        # Initialize at the root level
-        if depth == 0:
-            fig, axs = plt.subplots(self.count_nodes_at_depths(self.target_depths), 3, figsize=(30, 5))
-
-        # Only plot nodes at specific depths
-        if depth in self.target_depths:
-            # Determine node type and correct column
-            node_type = self.get_node_type(node)
-            new_col = {'SP': 1, 'OptA': 0, 'OptB': 2}.get(node_type, 1)
-
-            # Get the current row for this node type and depth
-            row = self.row_counters[depth][node_type]
-            self.plot_node(node, axs, row, new_col)
-
-            # Increment the row counter for this node type and depth
-            self.row_counters[depth][node_type] += 1
-
-        # Recursively plot child nodes
-        for child in node.children:
-            self.plot_optical_system_tree(child, depth + 1, col, axs)
-
-        # Show plot at root level
-        if depth == 0:
-            plt.tight_layout()
-            plt.show()
-
     def get_node_type(self, node):
         """ Determine the type of node (SP, OptA, OptB) based on the filename. """
         if node.seq_file_path:
