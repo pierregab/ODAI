@@ -487,8 +487,6 @@ class SystemSetup:
         self.spot = []  # Reset the spot values
 
 
-
-
       def save_system_parameters(self):
         """
         Save the current parameters of the system including the variability status of radius and thickness, and the current mode.
@@ -1203,8 +1201,6 @@ class SystemSetup:
             window = derivatives[start:end]
             return np.std(window) < threshold  # using the same threshold as before
 
-
-        # FAUT UPDATE SUR CODEV !!!!!!
 
         # Define initial curvature based on the reference surface
         initial_curvature = 1 / self.get_surface(reference_surface_number).radius
