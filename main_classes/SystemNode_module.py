@@ -452,26 +452,3 @@ class SystemTree:
         cbar = fig.colorbar(sm, ax=ax, label='Log of Merit Function Value')
         ax.set_title("Optimization Tree Visualization")
         plt.show()
-
-
-    def plot_best_merit_function_evolution(self):
-        """
-        Plot the merit function of all the parents of the best final node before the last final optimisation.
-        This allows to see the evolution of the merit function from the root to the best final system.
-        """
-        final_depth = self.find_final_depth()
-        final_depth_nodes = self.find_optimized_nodes_at_depth(final_depth)
-        best_node = min(final_depth_nodes, key=lambda node: node.merit_function)
-
-        merit_function_evolution = []
-        current_node = best_node
-        while current_node.parent is not None:
-            merit_function_evolution.append(current_node.merit_function)
-            current_node = current_node.parent
-        merit_function_evolution.reverse()
-
-        plt.plot(merit_function_evolution)
-        plt.xlabel("Node Depth")
-        plt.ylabel("Merit Function")
-        plt.title(f"Merit Function Evolution for Best Final Node")
-        plt.show()
