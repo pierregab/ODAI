@@ -40,6 +40,10 @@ Follow these steps to incorporate this framework into your optical design projec
 4. **Launch the Application**:
    Execute the main application script to initiate the optimization process. The GUI will guide you through configuring your optical system for optimization.
 
+### Using the Build Application
+
+For those who prefer not to install the required environment or modify the Python files directly, a build application is provided. This standalone application encapsulates all necessary components, offering a simplified and ready-to-use solution. To use it, simply download the application from the provided link in the repository and follow the instructions included for your operating system.
+
 ## Contributing
 
 Contributions to the project are highly encouraged. Whether you're refining optimization algorithms, enhancing the GUI, or expanding project utility, your involvement can significantly impact the field of optical system design.
@@ -51,6 +55,3 @@ This project is licensed under the 3PL 3.0 License. For more information, please
 ## Acknowledgements
 
 We extend our gratitude to the teams at Télécom Physique Strasbourg and ICube Laboratory, Université de Strasbourg, for their invaluable support and contributions to this project.
-
-
-
