@@ -5,6 +5,7 @@
   title="Optional title"
   style="display: inline-block; margin: 0 auto; width: 15%;">
 
+
 Optical System Design Optimization introduces a groundbreaking approach for the systematic design of complex optical systems, like wide-angle eyepieces. This project transcends traditional optimization limits by leveraging the innovative saddle point construction method for a broader and more comprehensive exploration of the design space.
 
 ## Project Overview
@@ -17,6 +18,11 @@ This framework presents a unique optimization methodology for developing high-pe
 - **GUI-Driven Workflow**: Enhances accessibility and usability through a user-friendly graphical interface that manages the optical system design process.
 - **CodeV Integration**: Seamlessly interfaces with CodeV for leveraging powerful local and global optimization capabilities.
 - **Python-Powered Analysis**: Utilizes Python for added flexibility in data manipulation and analysis, including tree creation and merit function evaluation.
+
+## Repository Structure
+
+- **main_classes**: Contains the core Python classes and scripts. The primary entry point is `main.py` which should be built if someone wishes to rebuild the app.
+- **Python_file_for_SPIE_paper**: Includes ancillary files or files that were used to write the paper for the SPIE on this project. These files are not typically required for general use.
 
 ## Getting Started
 
