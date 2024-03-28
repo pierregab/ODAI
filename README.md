@@ -1,4 +1,4 @@
-# Optical System Design Optimization: Saddle Point Method
+# Optical System Design Optimization: Saddle Point Application
 <img
   src="logo_final.png"
   alt="Alt text"
@@ -6,58 +6,60 @@
   style="display: inline-block; margin: 0 auto; width: 15%;">
 
 
-Optical System Design Optimization introduces a groundbreaking approach for the systematic design of complex optical systems, like wide-angle eyepieces. This project transcends traditional optimization limits by leveraging the innovative saddle point construction method for a broader and more comprehensive exploration of the design space.
+![ODAI Logo](logo_final.png)
+
+The Optical System Design Optimization project employs the saddle point method in an application that interfaces with CodeV software, offering a novel yet experimental approach to optical system design. While the application presents a new way to explore optical system configurations, it is important to note that outcomes can be highly sensitive to initial parameters and the specific system under consideration.
 
 ## Project Overview
 
-This framework presents a unique optimization methodology for developing high-performance optical systems. By integrating advanced optimization strategies with conventional tools like CodeV, it pioneers a novel method for uncovering innovative optical solutions.
+This application provides an optimization workflow that integrates the saddle point method with the powerful optical design capabilities of CodeV. It's designed for those looking to explore alternative approaches in optical system design, particularly in the realm of wide-angle eyepieces.
 
 ### Key Features
 
-- **Flexible Design Framework**: Employs a saddle point construction method to generate numerous starting points, facilitating a wider exploration of the design space.
-- **GUI-Driven Workflow**: Enhances accessibility and usability through a user-friendly graphical interface that manages the optical system design process.
-- **CodeV Integration**: Seamlessly interfaces with CodeV for leveraging powerful local and global optimization capabilities.
-- **Python-Powered Analysis**: Utilizes Python for added flexibility in data manipulation and analysis, including tree creation and merit function evaluation.
+- **Saddle Point Method**: Implements the saddle point method for optical system design, providing a fresh perspective on finding local minima in design space.
+- **User Interface**: Features a GUI that facilitates interaction with the application, making it more accessible for users unfamiliar with programming.
+- **CodeV Compatibility**: Developed to work in conjunction with CodeV, taking advantage of its optimization capabilities.
+- **Data Analysis Tools**: Includes Python scripts for data analysis, such as tree creation and merit function evaluation, adding a layer of flexibility to the design process.
 
 ## Repository Structure
 
-- **main_classes**: Contains the core Python classes and scripts. The primary entry point is `main.py` which should be built if someone wishes to rebuild the app.
-- **Python_file_for_SPIE_paper**: Includes ancillary files or files that were used to write the paper for the SPIE on this project. These files are not typically required for general use.
+- **main_classes**: The main directory with essential Python scripts, including `main.py` as the entry point for the application.
+- **Python_file_for_SPIE_paper**: Contains files related to the development of a paper for the SPIE conference and is not necessary for the operation of the application itself.
 
 ## Getting Started
 
-Follow these steps to incorporate this framework into your optical design projects:
+To use this application in your optical design endeavors, follow these instructions:
 
-1. **Prepare Your Environment**:
-   Ensure both Python and CodeV are installed on your system. This project requires functional installations of both.
+1. **Setup Your Environment**:
+   Make sure you have Python and CodeV installed as the application depends on both.
 
 2. **Clone the Repository**:
-   Download the project to your machine by cloning the repository:
+   Retrieve the project onto your local machine:
    ```sh
    git clone https://github.com/pierregab/ODAI.git
    ```
 
-3. **Install Dependencies**:
-   Install any required Python libraries using pip:
+3. **Install Python Dependencies**:
+   Install the required libraries with pip:
    ```sh
    pip install -r requirements.txt
    ```
 
-4. **Launch the Application**:
-   Execute the main application script to initiate the optimization process. The GUI will guide you through configuring your optical system for optimization.
+4. **Run the Application**:
+   Start the main script to initiate the design process. The GUI will provide step-by-step guidance.
 
-### Using the Build Application
+### Alternative: Pre-built Application
 
-For those who prefer not to install the required environment or modify the Python files directly, a build application is provided. This standalone application encapsulates all necessary components, offering a simplified and ready-to-use solution. To use it, simply download the application from the provided link in the repository and follow the instructions included for your operating system.
+If you prefer not to deal with environment setup or code modification, we offer a pre-built version of the application. Download it from the provided repository link and follow the included instructions for use.
 
 ## Contributing
 
-Contributions to the project are highly encouraged. Whether you're refining optimization algorithms, enhancing the GUI, or expanding project utility, your involvement can significantly impact the field of optical system design.
+Your input is welcome, particularly if you have ideas for improving the application, whether by tweaking the optimization algorithms, enhancing the GUI, or extending the app's functionality.
 
 ## License
 
-This project is licensed under the 3PL 3.0 License. For more information, please refer to the [LICENSE](LICENSE) file in the repository.
+This project is made available under the 3PL 3.0 License. Consult the [LICENSE](LICENSE) file for more details.
 
 ## Acknowledgements
 
-We extend our gratitude to the teams at Télécom Physique Strasbourg and ICube Laboratory, Université de Strasbourg, for their invaluable support and contributions to this project.
+We acknowledge and thank the contributors from Télécom Physique Strasbourg and ICube Laboratory, Université de Strasbourg, for their support and input into this project.
