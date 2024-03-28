@@ -6,8 +6,6 @@
   style="display: inline-block; margin: 0 auto; width: 15%;">
 
 
-![ODAI Logo](logo_final.png)
-
 The Optical System Design Optimization project employs the saddle point method in an application that interfaces with CodeV software, offering a novel yet experimental approach to optical system design. While the application presents a new way to explore optical system configurations, it is important to note that outcomes can be highly sensitive to initial parameters and the specific system under consideration.
 
 ## Project Overview
