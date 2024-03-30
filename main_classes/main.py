@@ -6,6 +6,7 @@ import sys
 import threading
 import pythoncom
 import os
+import webbrowser
 
 data_from_ui = None
 final_data = None
@@ -50,6 +51,11 @@ class OpticalSystemConfigInterface:
         submit_button = ttk.Button(self.root, text="Submit", command=self.submit)
         submit_button.pack(pady=10)
         
+        # Bouton HELP
+        buttons_frame = ttk.Frame(self.root)
+        buttons_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+        help_button = ttk.Button(buttons_frame, text="HELP", command=self.open_help_pdf)
+        help_button.pack(side=tk.RIGHT, padx=5)
        
 
     def setup_tabs(self):
@@ -59,7 +65,7 @@ class OpticalSystemConfigInterface:
         self.tab_starting_system = self.create_tab("Starting System")
         self.tab_console_output = self.create_tab("Console Output")
         self.tab_output = self.create_tab("Output")
-        
+       
         self.setup_environment_tab()
         self.setup_sp_parameters_tab()
         self.setup_tree_tab()
@@ -264,6 +270,16 @@ class OpticalSystemConfigInterface:
         remove_button = ttk.Button(frame, text="-", command=lambda fr=frame: fr.destroy())
         remove_button.pack(side=tk.LEFT)
         self.lens_thickness_steps_entries.append((frame, entry))
+    
+    def open_help_pdf(self):
+        pdf_path = r"C:\Users\Aurélien ARGY\Desktop\ODAI\Affichage.pdf"  
+        try:
+            if os.path.exists(pdf_path):
+                webbrowser.open_new(pdf_path)
+            else:
+                print("PDF file not found.")
+        except Exception as e:
+            print(f"Error opening PDF file : {e}")
 
     def submit(self):
         try:
