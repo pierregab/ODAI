@@ -56,7 +56,7 @@ Your input is welcome, particularly if you have ideas for improving the applicat
 
 ## License
 
-This project is made available under the 3PL 3.0 License. Consult the [LICENSE](LICENSE) file for more details.
+This project is made available under the GPL 3.0 License. Consult the [LICENSE](LICENSE) file for more details.
 
 ## Acknowledgements
 
