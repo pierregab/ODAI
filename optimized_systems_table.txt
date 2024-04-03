@@ -1,0 +1,3 @@
+Node ID         | Parent ID       | Merit Function  | EFL             | Children Count  | SEQ File Path  
+---------------------------------------------------------------------------------------------------------
+3               | 2               | 1.60903615      | 1.0             | 0               | C:/CVUSER/FinalOptimized_Node3.seq
