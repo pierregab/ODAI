@@ -1,3 +1,35 @@
+# ==============================================================================
+# PROJECT INFORMATION
+# ==============================================================================
+# Project Title: ODAI
+# Version: v1.0.0
+# Description: Optical System Design Optimization: Saddle Point Application
+# 
+# AUTHORS
+# ==============================================================================
+# Aurélien Argy, Florin Baumann, Jelil Belheine, Pierre-Gabriel Bibal-Sobeaux,
+# Benoit Brouillet
+# Institution: Télécom Physique Strasbourg, Université de Strasbourg,
+# Illkirch-Graffenstaden, France
+# 
+# LICENSE
+# ==============================================================================
+# This project is licensed under the GPL 3.0 License. 
+# For more details, see the LICENSE file in the project root.
+# 
+# DATE
+# ==============================================================================
+# Date of Creation: 04/04/2024
+# 
+# ==============================================================================
+# NOTES
+# ==============================================================================
+# The code is developed using CodeV version 2022.03 and is intended for use under
+# the guidelines of the GPL 3.0 License.
+# ==============================================================================
+
+
+
 ############## Console output functions ##############
 
 
